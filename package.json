@@ -1,0 +1,21 @@
+{
+  "name": "auto-test-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-packager .",
+    "pack-a": "electron-packager . --asar",
+    "pack-ao": "electron-packager . --asar --overwrite"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^4.1.3",
+    "electron-packager": "^13.1.1"
+  },
+  "dependencies": {
+    "node-xlsx": "^0.14.1"
+  }
+}

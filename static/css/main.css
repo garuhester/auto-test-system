@@ -1,0 +1,75 @@
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.disactive {
+    display: none;
+}
+
+.noselect {
+    -moz-user-select: none;
+    /*火狐*/
+    -webkit-user-select: none;
+    /*webkit浏览器*/
+    -ms-user-select: none;
+    /*IE10*/
+    /*早期浏览器*/
+    user-select: none;
+}
+
+.layui-table,
+.layui-table-view {
+    margin: 0;
+}
+
+.run-test {
+    background: #5FB878;
+}
+
+.layui-table-tool {
+    background: #fff;
+}
+
+.edit {
+    height: 100vh;
+    float: left;
+    width: 80%;
+}
+
+.runlist {
+    overflow: hidden;
+    height: 100vh;
+    width: 20%;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.edit-btns {
+    padding: 10px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+#run-sort {
+    cursor: grab;
+}
+
+#run-sort .sort-item {
+    padding: 20px;
+    box-sizing: border-box;
+    background: rgb(79, 179, 255);
+    margin-bottom: 10px;
+    border-radius: 7px;
+    color: #fff;
+}
+
+#run-sort .sort-item .layui-icon {
+    cursor: pointer;
+    float: right;
+    font-size: 17px;
+    margin-top: 2px;
+}
