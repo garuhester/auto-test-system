@@ -16,11 +16,23 @@
             <table class="layui-hide" id="demo" lay-filter="test"></table>
             <div class="disactive" id="toolbarDemo">
                 <div class="layui-btn-container">
-                    <button class="layui-btn layui-btn-sm layui-btn-normal add-new-test" lay-event="addNewTest">新增用例</button>
-                    <button class="layui-btn layui-btn-sm layui-btn-normal delete-mul" lay-event="deleteMul">批量删除</button>
-                    <button class="layui-btn layui-btn-sm layui-btn-normal goto-run" lay-event="gotoRun">加入执行</button>
-                    <button class="layui-btn layui-btn-sm run-test" lay-event="runText">运行</button>
-                    <button class="layui-btn layui-btn-sm stop-test layui-btn-danger" lay-event="stopText">停止</button>
+                    <div class="layui-btn-group">
+                        <button class="layui-btn layui-btn-sm layui-btn-normal add-new-test"
+                            lay-event="addTest">新增用例</button>
+                        <button class="layui-btn layui-btn-sm layui-btn-normal delete-mul"
+                            lay-event="deleteTest">删除用例</button>
+                    </div>
+                    <div class="layui-btn-group">
+                        <button class="layui-btn layui-btn-sm layui-btn-normal goto-run"
+                            lay-event="addRun">加入执行</button>
+                        <button class="layui-btn layui-btn-sm layui-btn-normal goto-run"
+                            lay-event="deleteRun">删除全部执行</button>
+                    </div>
+                    <div class="layui-btn-group">
+                        <button class="layui-btn layui-btn-sm run-test" lay-event="runText">运行</button>
+                        <button class="layui-btn layui-btn-sm stop-test layui-btn-danger"
+                            lay-event="stopText">停止</button>
+                    </div>
                 </div>
             </div>
             <div class="disactive" id="barDemo">
@@ -28,15 +40,12 @@
             </div>
         </div>
         <div class="runlist noselect">
-            <blockquote class="layui-elem-quote layui-quote-nm">执行顺序，从上往下
+            <blockquote class="layui-elem-quote layui-quote-nm">
+                <span style="font-size:20px;font-weight:bold;">执行区</span>
+                <br>执行顺序: 从上往下
                 <br>(鼠标拖放调整顺序)</blockquote>
             <hr class="layui-bg-orange">
             <div id="run-sort">无数据</div>
-            <script id="run-sort-temp" type="text/html">
-                {{#  layui.each(d.list, function(index, item){ }}
-                    <div class="sort-item id{{item.id}}">{{ item.title }} <i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>
-                {{#  }); }}
-            </script>
         </div>
     </div>
     <script src="../layui/layui.js"></script>
@@ -62,39 +71,60 @@
             var laytpl = layui.laytpl;
             window.$ = layui.$;
 
+            var allData = [{
+                "url": "demo1"
+                , "id": "1"
+                , "title": "单击文字操作"
+                , "content": `1. 从首页点击“编辑我的编辑+“
+2. 插入文本（三个）
+3. 单击文本对象
+4. 点击“删除”
+5. 点击“前移”
+6. 点击“后移”
+7. 再次点击文本对象`
+                , "hope": `1. 进入自由编辑页面
+2. 文本对象插入成功
+3. 弹出操作方式，所选对象插入按钮亮起
+4. 对所选对象删除操作
+5. 针对前后对象的位置，每次点击都做一次位置转换
+若已经位于最前位置，再点击“前移”，则位置换在最后一个位置
+6. 针对前后对象的位置，每次点击都做一次位置转换
+若已经位于最后位置，再点击“后移”，则位置换在第一个位置
+7. 操作方式弹层收回`
+            }, {
+                "url": "demo2"
+                , "id": "2"
+                , "title": "文本换行输入"
+                , "content": `1. 从首页点击“编辑我的标签+“
+2. 点击“文字+”插入新文本
+3. 多行输入,手动换行，自适应字号的指数达至400mm
+4. 改变字号，打印
+5. 改变字体，打印
+6. 改变字体修饰，打印`
+                , "hope": `1. 进入自由编辑页面
+2. 文本插入成功
+3. 输入自适应字号变小，直至最小字号，以最长行为标准变换字号`
+            }];
+            for (var i = 0; i < allData.length; i++) {
+                allData[i].content = allData[i].content.replace(/\n/g, "<br/>");
+                allData[i].hope = allData[i].hope.replace(/\n/g, "<br/>");
+            }
+
             table.render({
                 elem: '#demo'
                 , toolbar: '#toolbarDemo'
                 , height: 'full-0'
                 , cols: [[ //标题栏
-                    { type: 'checkbox', fixed: 'left' }
-                    , { field: 'url', title: '脚本', width: 80, hide: true, fixed: 'left' }
-                    , { field: 'id', title: '编号', width: 80, sort: true, fixed: 'left' }
-                    , { field: 'title', title: '用例标题', width: 160 }
-                    , { field: 'content', title: '步骤' }
-                    , { field: 'hope', title: '预期' }
-                    , { fixed: 'right', title: '操作', toolbar: '#barDemo', width: 80 }
+                    { type: 'checkbox' }
+                    , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
+                    , { field: 'id', title: '编号', width: 80, sort: true, unresize: true }
+                    , { field: 'title', title: '用例标题', width: 160, unresize: true }
+                    , { field: 'content', title: '步骤', unresize: true }
+                    , { field: 'hope', title: '预期', unresize: true }
+                    , { title: '操作', toolbar: '#barDemo', width: 80, unresize: true }
                 ]]
                 , limit: 20
-                , data: [{
-                    "url": "demo1"
-                    , "id": "1"
-                    , "title": "单击文字操作1"
-                    , "content": `1. 从首页点击“编辑我的编辑+“`
-                    , "hope": `1. 进入自由编辑页面 `
-                }, {
-                    "url": "demo2"
-                    , "id": "2"
-                    , "title": "单击文字操作2"
-                    , "content": `2. 从首页点击“编辑我的编辑+“`
-                    , "hope": `2. 进入自由编辑页面 `
-                }, {
-                    "url": "demo3"
-                    , "id": "3"
-                    , "title": "单击文字操作3"
-                    , "content": `3. 从首页点击“编辑我的编辑+“`
-                    , "hope": `3. 进入自由编辑页面 `
-                }]
+                , data: allData
                 , page: true //是否显示分页
             });
 
@@ -102,46 +132,56 @@
             table.on('toolbar(test)', function (obj) {
                 var checkStatus = table.checkStatus(obj.config.id);
                 switch (obj.event) {
-                    case 'addNewTest':
+                    case 'addTest':
                         //新增用例
                         var data = checkStatus.data;
                         break;
-                    case 'deleteMul':
+                    case 'deleteTest':
                         //批量删除
                         var data = checkStatus.data;
                         break;
-                    case 'gotoRun':
+                    case 'addRun':
                         //加入执行
                         var len = $(".sort-item").length;
-                        var d = checkStatus.data;
-                        var data = { //数据
-                            "list": d
+                        var data = checkStatus.data;
+                        var view = document.getElementById('run-sort');
+                        if (view.innerHTML.indexOf("无数据") != -1) {
+                            view.innerHTML = "";
                         }
-                        var getTpl = document.getElementById('run-sort-temp').innerHTML
-                            , view = document.getElementById('run-sort');
                         if (len == 0) {
-                            laytpl(getTpl).render(data, function (html) {
-                                view.innerHTML = html;
-                            });
+                            for (var i = 0; i < data.length; i++) {
+                                view.innerHTML += `<div class="sort-item id${data[i].id}">${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                            }
+                            // laytpl(getTpl).render(data, function (html) {
+                            //     view.innerHTML = html;
+                            // });
                         } else {
                             var newArr = [];
-                            for (var i = 0; i < d.length; i++) {
+                            for (var i = 0; i < data.length; i++) {
                                 var temp = true;
                                 for (var j = 0; j < $(".sort-item").length; j++) {
-                                    if (d[i].id == $(".sort-item")[j].className.replace("sort-item id", "")) {
+                                    if (data[i].id == $(".sort-item")[j].className.replace("sort-item id", "")) {
                                         temp = false;
                                         break;
                                     }
                                 }
                                 if (temp) {
-                                    newArr.push(d[i]);
+                                    newArr.push(data[i]);
                                 }
                             }
-                            var data = { //数据
-                                "list": newArr
+                            console.log(newArr);
+                            for (var i = 0; i < newArr.length; i++) {
+                                view.innerHTML += `<div class="sort-item id${newArr[i].id}">${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
                             }
-                            laytpl(getTpl).render(data, function (html) {
-                                view.innerHTML += html;
+                        }
+                        break;
+                    case 'deleteRun':
+                        //删除执行
+                        if ($(".sort-item").length != 0) {
+                            layer.confirm('确定要删除全部执行？', function (index) {
+                                var view = document.getElementById('run-sort');
+                                view.innerHTML = "无数据";
+                                layer.close(index);
                             });
                         }
                         break;
@@ -160,7 +200,7 @@
             table.on('tool(test)', function (obj) {
                 var data = obj.data;
                 if (obj.event === 'del') {
-                    layer.confirm('真的删除行么', function (index) {
+                    layer.confirm('确定删除？', function (index) {
                         obj.del();
                         layer.close(index);
                     });
@@ -171,6 +211,11 @@
         function delItem(obj) {
             layer.confirm('确认删除？', function (index) {
                 $(obj).parent().remove();
+                var len = $(".sort-item").length;
+                if (len == 0) {
+                    var view = document.getElementById('run-sort');
+                    view.innerHTML = "无数据";
+                }
                 layer.close(index);
             });
         }

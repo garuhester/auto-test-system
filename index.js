@@ -12,8 +12,8 @@ app.on('ready', function () {
         icon: "./static/img/ats.png",
         // maxWidth: 1000,
         // maxHeight: 800,
-        minWidth: 1280,
-        minHeight: 900
+        minWidth: 960,
+        minHeight: 700
     })
 
     win.loadURL(`file://${__dirname}/static/pages/index.html`);
