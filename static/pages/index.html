@@ -99,9 +99,11 @@
         var Sortable = require('../js/Sortable.min.js');
         const { remote } = require('electron');
         var child_process = require('child_process');
+        var request = require('request');
+        var fs = require('fs');
         var path = require('path');
         var pyPath = path.dirname(remote.app.getPath('exe'));
-        var upload;
+        var upload, uploadId;
 
         initSortable();
         //初始化拖拽
@@ -127,7 +129,7 @@
             //重载数据
             function reloadTableData() {
                 // table.reload('demo', {
-                //     url: '/api/table/search'
+                //     data: allData
                 // });
             }
 
@@ -191,33 +193,38 @@
                     // layer.alert(JSON.stringify(data.field), {
                     //     title: '最终的提交信息'
                     // })
-                    layer.close(upload);
-                    layer.open({
-                        type: 1,
-                        title: '上传用例文件',
-                        area: ['55%'],
-                        content: $("#addTest2")
-                    });
+                    $.ajax({
+                        type: 'post',
+                        url: URL + "/add",
+                        data: {
+                            title: data.field.title,
+                            content: data.field.content,
+                            hope: data.field.hope
+                        },
+                        success(result) {
+                            console.log(result);
+                        }
+                    })
+                    // layer.close(upload);
+                    // layer.open({
+                    //     type: 1,
+                    //     title: '上传用例文件',
+                    //     area: ['55%'],
+                    //     content: $("#addTest2")
+                    // });
                     return false;
                 });
                 form.val('example', {
-                    "title": "单击文字操作"
-                    , "content": `1. 从首页点击“编辑我的编辑+“
-2. 插入文本（三个）
-3. 单击文本对象
-4. 点击“删除”
-5. 点击“前移”
-6. 点击“后移”
-7. 再次点击文本对象`
+                    "title": "文本换行输入"
+                    , "content": `1. 从首页点击“编辑我的标签+“
+2. 点击“文字+”插入新文本
+3. 多行输入,手动换行，自适应字号的指数达至400mm
+4. 改变字号，打印
+5. 改变字体，打印
+6. 改变字体修饰，打印`
                     , "hope": `1. 进入自由编辑页面
-2. 文本对象插入成功
-3. 弹出操作方式，所选对象插入按钮亮起
-4. 对所选对象删除操作
-5. 针对前后对象的位置，每次点击都做一次位置转换
-若已经位于最前位置，再点击“前移”，则位置换在最后一个位置
-6. 针对前后对象的位置，每次点击都做一次位置转换
-若已经位于最后位置，再点击“后移”，则位置换在第一个位置
-7. 操作方式弹层收回`
+2. 文本插入成功
+3. 输入自适应字号变小，直至最小字号，以最长行为标准变换字号`
                 })
             }
 
@@ -230,45 +237,11 @@
                 }
             })
             function initTable(allData) {
-                var demoData = [{
-                    "url": "demo1"
-                    , "id": "1"
-                    , "title": "单击文字操作"
-                    , "content": `1. 从首页点击“编辑我的编辑+“
-2. 插入文本（三个）
-3. 单击文本对象
-4. 点击“删除”
-5. 点击“前移”
-6. 点击“后移”
-7. 再次点击文本对象`
-                    , "hope": `1. 进入自由编辑页面
-2. 文本对象插入成功
-3. 弹出操作方式，所选对象插入按钮亮起
-4. 对所选对象删除操作
-5. 针对前后对象的位置，每次点击都做一次位置转换
-若已经位于最前位置，再点击“前移”，则位置换在最后一个位置
-6. 针对前后对象的位置，每次点击都做一次位置转换
-若已经位于最后位置，再点击“后移”，则位置换在第一个位置
-7. 操作方式弹层收回`
-                }, {
-                    "url": "demo2"
-                    , "id": "2"
-                    , "title": "文本换行输入"
-                    , "content": `1. 从首页点击“编辑我的标签+“
-2. 点击“文字+”插入新文本
-3. 多行输入,手动换行，自适应字号的指数达至400mm
-4. 改变字号，打印
-5. 改变字体，打印
-6. 改变字体修饰，打印`
-                    , "hope": `1. 进入自由编辑页面
-2. 文本插入成功
-3. 输入自适应字号变小，直至最小字号，以最长行为标准变换字号`
-                }];
 
                 console.log("api请求表格数据:", allData);
                 for (var i = 0; i < allData.length; i++) {
-                    allData[i].content = allData[i].content.replace(/\\n/g, "<br/>");
-                    allData[i].hope = allData[i].hope.replace(/\\n/g, "<br/>");
+                    allData[i].content = allData[i].content.replace(/\n/g, "<br/>");
+                    allData[i].hope = allData[i].hope.replace(/\n/g, "<br/>");
                 }
 
                 table.render({
@@ -279,7 +252,7 @@
                     , cols: [[ //标题栏
                         { type: 'checkbox' }
                         , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
-                        , { field: '_id', title: '编号', width: 80, hide: true, sort: true, unresize: true }
+                        , { field: '_id', title: '编号', width: 210, sort: true, unresize: true }
                         , { field: 'title', title: '用例标题', unresize: true }
                         , { field: 'content', title: '用例步骤', unresize: true }
                         , { field: 'hope', title: '用例预期', unresize: true, hide: true }
@@ -327,14 +300,14 @@
                             }
                             if (len == 0) {
                                 for (var i = 0; i < data.length; i++) {
-                                    view.innerHTML += `<div class="sort-item id${data[i].id}">${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                                    view.innerHTML += `<div class="sort-item id${data[i]._id}">${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
                                 }
                             } else {
                                 var newArr = [];
                                 for (var i = 0; i < data.length; i++) {
                                     var temp = true;
                                     for (var j = 0; j < $(".sort-item").length; j++) {
-                                        if (data[i].id == $(".sort-item")[j].className.replace("sort-item id", "")) {
+                                        if (data[i]._id == $(".sort-item")[j].className.replace("sort-item id", "")) {
                                             temp = false;
                                             break;
                                         }
@@ -345,7 +318,7 @@
                                 }
                                 console.log(newArr);
                                 for (var i = 0; i < newArr.length; i++) {
-                                    view.innerHTML += `<div class="sort-item id${newArr[i].id}">${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                                    view.innerHTML += `<div class="sort-item id${newArr[i]._id}">${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
                                 }
                             }
                             break;
@@ -362,8 +335,19 @@
                         case 'runText':
                             //运行
                             var data = checkStatus.data;
-                            var downPath = URL + "/zip/5cbebfb0a4883b2128cc2061.zip";
                             var savePath = __dirname;
+                            var sortItems = $(".sort-item");
+                            console.log(sortItems);
+                            for (var i = 0; i < sortItems.length; i++) {
+                                (function (i) {
+                                    var _id = $(".sort-item")[0].className.replace("sort-item id", "");
+                                    var downPath = URL + `/zip/${_id}.zip`;
+                                    var filename = savePath + `/${i + 1}.zip`;
+                                    downloadFile(downPath, filename, function () {
+                                        console.log('第' + (i + 1) + '个文件下载完毕 id:' + _id);
+                                    });
+                                })(i);
+                            }
                             break;
                         case 'stopText':
                             // 停止
@@ -385,6 +369,11 @@
             }
 
         });
+
+        function downloadFile(uri, filename, callback) {
+            var stream = fs.createWriteStream(filename);
+            request(uri).pipe(stream).on('close', callback);
+        }
 
         function delItem(obj) {
             layer.confirm('确认删除？', function (index) {
