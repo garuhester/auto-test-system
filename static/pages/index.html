@@ -14,30 +14,6 @@
     <div class="main">
         <div class="edit">
             <table class="layui-hide" id="demo" lay-filter="test"></table>
-            <div class="disactive" id="toolbarDemo">
-                <div class="layui-btn-container">
-                    <div class="layui-btn-group">
-                        <button class="layui-btn layui-btn-sm layui-btn-normal add-new-test"
-                            lay-event="addTest">新增用例</button>
-                        <button class="layui-btn layui-btn-sm layui-btn-normal delete-mul"
-                            lay-event="deleteTest">删除用例</button>
-                    </div>
-                    <div class="layui-btn-group">
-                        <button class="layui-btn layui-btn-sm layui-btn-normal goto-run"
-                            lay-event="addRun">加入执行</button>
-                        <button class="layui-btn layui-btn-sm layui-btn-normal goto-run"
-                            lay-event="deleteRun">删除全部执行</button>
-                    </div>
-                    <div class="layui-btn-group">
-                        <button class="layui-btn layui-btn-sm run-test" lay-event="runText">运行</button>
-                        <button class="layui-btn layui-btn-sm stop-test layui-btn-danger"
-                            lay-event="stopText">停止</button>
-                    </div>
-                </div>
-            </div>
-            <div class="disactive" id="barDemo">
-                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-            </div>
         </div>
         <div class="runlist noselect">
             <blockquote class="layui-elem-quote layui-quote-nm">
@@ -48,41 +24,192 @@
             <div id="run-sort">无数据</div>
         </div>
     </div>
+    <div class="disactive" id="toolbarDemo">
+        <div class="layui-btn-container">
+            <div class="layui-btn-group">
+                <button class="layui-btn layui-btn-sm layui-btn-normal add-new-test" lay-event="addTest">新增用例</button>
+                <button class="layui-btn layui-btn-sm layui-btn-normal delete-mul" lay-event="deleteTest">删除用例</button>
+            </div>
+            <div class="layui-btn-group">
+                <button class="layui-btn layui-btn-sm layui-btn-normal goto-run" lay-event="addRun">加入执行</button>
+                <button class="layui-btn layui-btn-sm layui-btn-normal goto-run" lay-event="deleteRun">删除全部执行</button>
+            </div>
+            <div class="layui-btn-group">
+                <button class="layui-btn layui-btn-sm run-test" lay-event="runText">运行</button>
+                <button class="layui-btn layui-btn-sm stop-test layui-btn-danger" lay-event="stopText">停止</button>
+            </div>
+        </div>
+    </div>
+    <div class="disactive" id="barDemo">
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </div>
+    <div class="disactive" id="addTest">
+        <form class="layui-form layui-form-pane" action="" lay-filter="example">
+            <div class="layui-form-item">
+                <label class="layui-form-label">用例标题</label>
+                <div class="layui-input-block">
+                    <input type="text" name="title" lay-verify="title" autocomplete="off" placeholder="请输入用例标题"
+                        class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">用例步骤</label>
+                <div class="layui-input-block">
+                    <textarea placeholder="请输入用例步骤" class="layui-textarea" name="content"
+                        lay-verify="content"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">用例预期</label>
+                <div class="layui-input-block">
+                    <textarea placeholder="请输入用例预期" class="layui-textarea" name="hope" lay-verify="hope"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <button class="layui-btn layui-btn-normal upload-case" lay-submit="" lay-filter="demo1">提交用例</button>
+                <button type="reset" class="layui-btn layui-btn-primary"
+                    style="margin-left:0px;width:100%;margin-top:15px;">重置表单</button>
+            </div>
+        </form>
+    </div>
+    <div class="disactive" id="addTest2">
+        <div class="layui-upload-drag" id="zipfile">
+            <i class="layui-icon"></i>
+            <p>点击上传，或将文件拖拽到此处</p>
+        </div>
+        <fieldset class="layui-elem-field" style="margin-top:15px;">
+            <legend>用例文件信息</legend>
+            <div class="layui-field-box">
+                文件名：<span class="filename">无</span>
+            </div>
+            <div class="layui-field-box">
+                文件路径：<span class="filepath">无</span>
+            </div>
+            <div class="layui-field-box">
+                文件大小：<span class="filesize">无</span>
+            </div>
+        </fieldset>
+        <button class="layui-btn layui-btn-normal" id="uploadFile">上传文件</button>
+    </div>
     <script src="../layui/layui.js"></script>
     <script src="../js/Sortable.min.js"></script>
+    <script src="../js/main.js"></script>
     <script>
+        //初始化参数
         var Sortable = require('../js/Sortable.min.js');
         const { remote } = require('electron');
         var child_process = require('child_process');
         var path = require('path');
-        var xlsx = require("node-xlsx");
         var pyPath = path.dirname(remote.app.getPath('exe'));
+        var upload;
 
-        var run_sort = document.getElementById('run-sort');
-        new Sortable(run_sort, {
-            animation: 150,
-            ghostClass: 'blue-background-class',
-            onUpdate: function (evt) {
-                console.log(1);
-            },
-        });
-        layui.use(['layer', 'table', 'laytpl'], function () {
+        initSortable();
+        //初始化拖拽
+        function initSortable() {
+            var run_sort = document.getElementById('run-sort');
+            new Sortable(run_sort, {
+                animation: 150,
+                ghostClass: 'blue-background-class',
+                onUpdate: function (evt) {
+                    console.log(1);
+                },
+            });
+        }
+
+        //初始化layui
+        layui.use(['layer', 'table', 'laytpl', 'form', 'upload'], function () {
+            var form = layui.form;
             var table = layui.table;
             var laytpl = layui.laytpl;
+            var upload = layui.upload;
             window.$ = layui.$;
 
-            var allData = [{
-                "url": "demo1"
-                , "id": "1"
-                , "title": "单击文字操作"
-                , "content": `1. 从首页点击“编辑我的编辑+“
+            //重载数据
+            function reloadTableData() {
+                // table.reload('demo', {
+                //     url: '/api/table/search'
+                // });
+            }
+
+            //初始化上传文件组件
+            initUpload();
+            function initUpload() {
+                upload.render({ //允许上传的文件后缀
+                    elem: '#zipfile'
+                    , url: '/upload/'
+                    , auto: false
+                    , bindAction: '#uploadFile'
+                    , size: 5120
+                    , accept: 'file' //普通文件
+                    , exts: 'zip' //只允许上传压缩文件
+                    , choose: function (obj) {
+                        //将每次选择的文件追加到文件队列
+                        var files = obj.pushFile();
+                        //预读本地文件，如果是多文件，则会遍历。(不支持ie8/9)
+                        obj.preview(function (index, file, result) {
+                            console.log(file);
+                            $(".filename").text(file.name);
+                            $(".filepath").text(file.path);
+                            $(".filesize").text(~~(file.size / 1024) + "KB");
+                        });
+                    }
+                    , before: function (obj) {
+                        layer.load();
+                    }
+                    , done: function (res, index, upload) {
+                        layer.closeAll('loading');
+                        reloadTableData();
+                        console.log(res)
+                    }
+                    , error: function (index, upload) {
+                        layer.closeAll('loading');
+                    }
+                });
+            }
+
+            //初始化新增用例表单
+            initForm();
+            function initForm() {
+                form.verify({
+                    title: function (value) {
+                        if (value.trim().length == 0) {
+                            return '标题不能为空啊';
+                        }
+                    },
+                    content: function (value) {
+                        if (value.trim().length == 0) {
+                            return '步骤不能为空啊';
+                        }
+                    },
+                    hope: function (value) {
+                        if (value.trim().length == 0) {
+                            return '期望不能为空啊';
+                        }
+                    }
+                });
+                form.on('submit(demo1)', function (data) {
+                    // layer.alert(JSON.stringify(data.field), {
+                    //     title: '最终的提交信息'
+                    // })
+                    layer.close(upload);
+                    layer.open({
+                        type: 1,
+                        title: '上传用例文件',
+                        area: ['55%'],
+                        content: $("#addTest2")
+                    });
+                    return false;
+                });
+                form.val('example', {
+                    "title": "单击文字操作"
+                    , "content": `1. 从首页点击“编辑我的编辑+“
 2. 插入文本（三个）
 3. 单击文本对象
 4. 点击“删除”
 5. 点击“前移”
 6. 点击“后移”
 7. 再次点击文本对象`
-                , "hope": `1. 进入自由编辑页面
+                    , "hope": `1. 进入自由编辑页面
 2. 文本对象插入成功
 3. 弹出操作方式，所选对象插入按钮亮起
 4. 对所选对象删除操作
@@ -91,121 +218,172 @@
 6. 针对前后对象的位置，每次点击都做一次位置转换
 若已经位于最后位置，再点击“后移”，则位置换在第一个位置
 7. 操作方式弹层收回`
-            }, {
-                "url": "demo2"
-                , "id": "2"
-                , "title": "文本换行输入"
-                , "content": `1. 从首页点击“编辑我的标签+“
+                })
+            }
+
+            //初始化表格
+            $.ajax({
+                type: 'get',
+                url: URL + '/list',
+                success(result) {
+                    initTable(result.list);
+                }
+            })
+            function initTable(allData) {
+                var demoData = [{
+                    "url": "demo1"
+                    , "id": "1"
+                    , "title": "单击文字操作"
+                    , "content": `1. 从首页点击“编辑我的编辑+“
+2. 插入文本（三个）
+3. 单击文本对象
+4. 点击“删除”
+5. 点击“前移”
+6. 点击“后移”
+7. 再次点击文本对象`
+                    , "hope": `1. 进入自由编辑页面
+2. 文本对象插入成功
+3. 弹出操作方式，所选对象插入按钮亮起
+4. 对所选对象删除操作
+5. 针对前后对象的位置，每次点击都做一次位置转换
+若已经位于最前位置，再点击“前移”，则位置换在最后一个位置
+6. 针对前后对象的位置，每次点击都做一次位置转换
+若已经位于最后位置，再点击“后移”，则位置换在第一个位置
+7. 操作方式弹层收回`
+                }, {
+                    "url": "demo2"
+                    , "id": "2"
+                    , "title": "文本换行输入"
+                    , "content": `1. 从首页点击“编辑我的标签+“
 2. 点击“文字+”插入新文本
 3. 多行输入,手动换行，自适应字号的指数达至400mm
 4. 改变字号，打印
 5. 改变字体，打印
 6. 改变字体修饰，打印`
-                , "hope": `1. 进入自由编辑页面
+                    , "hope": `1. 进入自由编辑页面
 2. 文本插入成功
 3. 输入自适应字号变小，直至最小字号，以最长行为标准变换字号`
-            }];
-            for (var i = 0; i < allData.length; i++) {
-                allData[i].content = allData[i].content.replace(/\n/g, "<br/>");
-                allData[i].hope = allData[i].hope.replace(/\n/g, "<br/>");
-            }
+                }];
 
-            table.render({
-                elem: '#demo'
-                , toolbar: '#toolbarDemo'
-                , height: 'full-0'
-                , cols: [[ //标题栏
-                    { type: 'checkbox' }
-                    , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
-                    , { field: 'id', title: '编号', width: 80, sort: true, unresize: true }
-                    , { field: 'title', title: '用例标题', width: 160, unresize: true }
-                    , { field: 'content', title: '步骤', unresize: true }
-                    , { field: 'hope', title: '预期', unresize: true }
-                    , { title: '操作', toolbar: '#barDemo', width: 80, unresize: true }
-                ]]
-                , limit: 20
-                , data: allData
-                , page: true //是否显示分页
-            });
+                console.log("api请求表格数据:", allData);
+                for (var i = 0; i < allData.length; i++) {
+                    allData[i].content = allData[i].content.replace(/\\n/g, "<br/>");
+                    allData[i].hope = allData[i].hope.replace(/\\n/g, "<br/>");
+                }
 
-            //头工具栏事件
-            table.on('toolbar(test)', function (obj) {
-                var checkStatus = table.checkStatus(obj.config.id);
-                switch (obj.event) {
-                    case 'addTest':
-                        //新增用例
-                        var data = checkStatus.data;
-                        break;
-                    case 'deleteTest':
-                        //批量删除
-                        var data = checkStatus.data;
-                        break;
-                    case 'addRun':
-                        //加入执行
-                        var len = $(".sort-item").length;
-                        var data = checkStatus.data;
-                        var view = document.getElementById('run-sort');
-                        if (view.innerHTML.indexOf("无数据") != -1) {
-                            view.innerHTML = "";
-                        }
-                        if (len == 0) {
-                            for (var i = 0; i < data.length; i++) {
-                                view.innerHTML += `<div class="sort-item id${data[i].id}">${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                table.render({
+                    elem: '#demo'
+                    , toolbar: '#toolbarDemo'
+                    , height: 'full-0'
+                    , defaultToolbar: ['filter', 'exports']
+                    , cols: [[ //标题栏
+                        { type: 'checkbox' }
+                        , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
+                        , { field: '_id', title: '编号', width: 80, hide: true, sort: true, unresize: true }
+                        , { field: 'title', title: '用例标题', unresize: true }
+                        , { field: 'content', title: '用例步骤', unresize: true }
+                        , { field: 'hope', title: '用例预期', unresize: true, hide: true }
+                        , { title: '操作', toolbar: '#barDemo', width: 80, unresize: true }
+                    ]]
+                    , limit: 20
+                    , data: allData
+                    , page: true //是否显示分页
+                });
+
+                //头工具栏事件
+                table.on('toolbar(test)', function (obj) {
+                    var checkStatus = table.checkStatus(obj.config.id);
+                    switch (obj.event) {
+                        case 'addTest':
+                            //新增用例
+                            var data = checkStatus.data;
+                            upload = layer.open({
+                                type: 1,
+                                title: '新增用例',
+                                area: ['55%'],
+                                content: $("#addTest")
+                            });
+                            break;
+                        case 'deleteTest':
+                            //批量删除
+                            var data = checkStatus.data;
+                            if (data.length == 0) {
+                                layer.msg('请先选择需要删除的用例');
+                                return;
                             }
-                            // laytpl(getTpl).render(data, function (html) {
-                            //     view.innerHTML = html;
-                            // });
-                        } else {
-                            var newArr = [];
-                            for (var i = 0; i < data.length; i++) {
-                                var temp = true;
-                                for (var j = 0; j < $(".sort-item").length; j++) {
-                                    if (data[i].id == $(".sort-item")[j].className.replace("sort-item id", "")) {
-                                        temp = false;
-                                        break;
-                                    }
-                                }
-                                if (temp) {
-                                    newArr.push(data[i]);
-                                }
-                            }
-                            console.log(newArr);
-                            for (var i = 0; i < newArr.length; i++) {
-                                view.innerHTML += `<div class="sort-item id${newArr[i].id}">${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
-                            }
-                        }
-                        break;
-                    case 'deleteRun':
-                        //删除执行
-                        if ($(".sort-item").length != 0) {
-                            layer.confirm('确定要删除全部执行？', function (index) {
-                                var view = document.getElementById('run-sort');
-                                view.innerHTML = "无数据";
+                            layer.confirm('确定要删除选中的用例？', function (index) {
+                                layer.msg('删除成功');
+                                reloadTableData();
                                 layer.close(index);
                             });
-                        }
-                        break;
-                    case 'runText':
-                        //运行
-                        var data = checkStatus.data;
-                        break;
-                    case 'stopText':
-                        // 停止
-                        var data = checkStatus.data;
-                        break;
-                };
-            });
+                            break;
+                        case 'addRun':
+                            //加入执行
+                            var len = $(".sort-item").length;
+                            var data = checkStatus.data;
+                            var view = document.getElementById('run-sort');
+                            if (view.innerHTML.indexOf("无数据") != -1 && data.length != 0) {
+                                view.innerHTML = "";
+                            }
+                            if (len == 0) {
+                                for (var i = 0; i < data.length; i++) {
+                                    view.innerHTML += `<div class="sort-item id${data[i].id}">${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                                }
+                            } else {
+                                var newArr = [];
+                                for (var i = 0; i < data.length; i++) {
+                                    var temp = true;
+                                    for (var j = 0; j < $(".sort-item").length; j++) {
+                                        if (data[i].id == $(".sort-item")[j].className.replace("sort-item id", "")) {
+                                            temp = false;
+                                            break;
+                                        }
+                                    }
+                                    if (temp) {
+                                        newArr.push(data[i]);
+                                    }
+                                }
+                                console.log(newArr);
+                                for (var i = 0; i < newArr.length; i++) {
+                                    view.innerHTML += `<div class="sort-item id${newArr[i].id}">${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                                }
+                            }
+                            break;
+                        case 'deleteRun':
+                            //删除执行
+                            if ($(".sort-item").length != 0) {
+                                layer.confirm('确定要删除全部执行？', function (index) {
+                                    var view = document.getElementById('run-sort');
+                                    view.innerHTML = "无数据";
+                                    layer.close(index);
+                                });
+                            }
+                            break;
+                        case 'runText':
+                            //运行
+                            var data = checkStatus.data;
+                            var downPath = URL + "/zip/5cbebfb0a4883b2128cc2061.zip";
+                            var savePath = __dirname;
+                            break;
+                        case 'stopText':
+                            // 停止
+                            var data = checkStatus.data;
+                            break;
+                    };
+                });
 
-            //监听行工具事件
-            table.on('tool(test)', function (obj) {
-                var data = obj.data;
-                if (obj.event === 'del') {
-                    layer.confirm('确定删除？', function (index) {
-                        obj.del();
-                        layer.close(index);
-                    });
-                }
-            });
+                //监听行工具事件
+                table.on('tool(test)', function (obj) {
+                    var data = obj.data;
+                    if (obj.event === 'del') {
+                        layer.confirm('确定删除？', function (index) {
+                            obj.del();
+                            layer.close(index);
+                        });
+                    }
+                });
+            }
+
         });
 
         function delItem(obj) {
@@ -227,28 +405,6 @@
         function show() {
             window.open("./about.html", "_blank", "nodeIntegration=no");
         }
-
-        function getXls() {
-            layer.alert('内容')
-            var obj = xlsx.parse(`${pyPath}/testing-files/data.xls`);
-            var sheet = obj[0].data;
-            var data = [];
-            var result, tag, img;
-            for (var j = 0; j < sheet.length; j++) {
-                var json = {};
-                result = sheet[j][0];
-                tag = sheet[j][1];
-                var isEmpty = result == "" || result == null || result == undefined || tag == "" || tag == null || tag == undefined;
-
-                if (!isEmpty) {
-                    json["result"] = result;
-                    json["tag"] = tag;
-                    data.push(json);
-                }
-            }
-            console.log(data);
-        }
-
 
     </script>
 </body>
