@@ -103,7 +103,7 @@
         var fs = require('fs');
         var path = require('path');
         var pyPath = path.dirname(remote.app.getPath('exe'));
-        var upload, uploadId;
+        var uploadLayer, uploadId;
 
         initSortable();
         //初始化拖拽
@@ -134,11 +134,11 @@
             }
 
             //初始化上传文件组件
-            initUpload();
             function initUpload() {
                 upload.render({ //允许上传的文件后缀
                     elem: '#zipfile'
-                    , url: '/upload/'
+                    , url: URL + '/uploads'
+                    , data: { id: uploadId + "" }
                     , auto: false
                     , bindAction: '#uploadFile'
                     , size: 5120
@@ -159,12 +159,14 @@
                         layer.load();
                     }
                     , done: function (res, index, upload) {
-                        layer.closeAll('loading');
-                        reloadTableData();
                         console.log(res)
+                        layer.closeAll();
+                        layer.msg('上传成功');
+                        reloadTableData();
                     }
                     , error: function (index, upload) {
-                        layer.closeAll('loading');
+                        layer.closeAll();
+                        layer.msg('上传失败');
                     }
                 });
             }
@@ -202,16 +204,18 @@
                             hope: data.field.hope
                         },
                         success(result) {
-                            console.log(result);
+                            console.log("新增用例:", result);
+                            uploadId = result.list._id;
+                            layer.close(uploadLayer);
+                            initUpload();
+                            layer.open({
+                                type: 1,
+                                title: '上传用例文件',
+                                area: ['55%'],
+                                content: $("#addTest2")
+                            });
                         }
                     })
-                    // layer.close(upload);
-                    // layer.open({
-                    //     type: 1,
-                    //     title: '上传用例文件',
-                    //     area: ['55%'],
-                    //     content: $("#addTest2")
-                    // });
                     return false;
                 });
                 form.val('example', {
@@ -254,7 +258,7 @@
                         , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
                         , { field: '_id', title: '编号', width: 210, sort: true, unresize: true }
                         , { field: 'title', title: '用例标题', unresize: true }
-                        , { field: 'content', title: '用例步骤', unresize: true }
+                        , { field: 'content', title: '用例步骤', unresize: true, hide: true }
                         , { field: 'hope', title: '用例预期', unresize: true, hide: true }
                         , { title: '操作', toolbar: '#barDemo', width: 80, unresize: true }
                     ]]
@@ -270,7 +274,7 @@
                         case 'addTest':
                             //新增用例
                             var data = checkStatus.data;
-                            upload = layer.open({
+                            uploadLayer = layer.open({
                                 type: 1,
                                 title: '新增用例',
                                 area: ['55%'],
@@ -338,9 +342,13 @@
                             var savePath = __dirname;
                             var sortItems = $(".sort-item");
                             console.log(sortItems);
+                            if (sortItems.length == 0) {
+                                layer.msg('请先加入需要执行的用例');
+                                return;
+                            }
                             for (var i = 0; i < sortItems.length; i++) {
                                 (function (i) {
-                                    var _id = $(".sort-item")[0].className.replace("sort-item id", "");
+                                    var _id = $(".sort-item")[i].className.replace("sort-item id", "");
                                     var downPath = URL + `/zip/${_id}.zip`;
                                     var filename = savePath + `/${i + 1}.zip`;
                                     downloadFile(downPath, filename, function () {
