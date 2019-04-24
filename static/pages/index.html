@@ -402,6 +402,7 @@
                                 layer.msg('当前无执行用例');
                                 return;
                             }
+                            layer.load();
                             var temp = 0;
                             var unzipItem = setInterval(() => {
                                 if (temp == sortItems.length) {
@@ -440,22 +441,46 @@
                             break;
                         case 'runTextDemo':
                             console.log(__dirname + "/1.zip");
-                            fs.readdir(__dirname, function (err, files) {
-                                for (var i = 0; i < files.length; i++) {
-                                    (function (i) {
-                                        if (files[i].indexOf(".zip") != -1) {
-                                            var extract = unzip.Extract({ path: __dirname + `/${files[i].split(".")[0]}` });
-                                            extract.on('finish', function () {
-                                                console.log("解压完成!!");
-                                            });
-                                            extract.on('error', function (err) {
-                                                console.log(err);
-                                            });
-                                            fs.createReadStream(__dirname + `/${files[i]}`).pipe(extract);
+                            // fs.readdir(__dirname, function (err, files) {
+                            //     for (var i = 0; i < files.length; i++) {
+                            //         (function (i) {
+                            //             if (files[i].indexOf(".zip") != -1) {
+                            //                 var extract = unzip.Extract({ path: __dirname + `/${files[i].split(".")[0]}` });
+                            //                 extract.on('finish', function () {
+                            //                     console.log("解压完成!!");
+                            //                 });
+                            //                 extract.on('error', function (err) {
+                            //                     console.log(err);
+                            //                 });
+                            //                 fs.createReadStream(__dirname + `/${files[i]}`).pipe(extract);
+                            //             }
+                            //         })(i);
+                            //     }
+                            // })
+                            fs.mkdir(__dirname + "/run", function (err) {
+                                if (err) {
+                                    console.error('创建文件夹出错！', err);
+                                } else {
+                                    console.log('文件夹-创建成功！');
+
+                                    
+
+
+                                    fs.writeFile(__dirname + "/run/run.py", '', function (err) {
+                                        if (err) {
+                                            return console.error('创建文件出错！', err);
                                         }
-                                    })(i);
+                                        console.log("数据写入成功！");
+                                        // fs.readFile(__dirname + "/run/run.py", function (err, data) {
+                                        //     if (err) {
+                                        //         return console.error(err);
+                                        //     }
+                                        //     console.log("异步读取文件数据: " + data.toString());
+                                        // });
+                                    });
                                 }
-                            })
+                            });
+                            // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
                             break;
                         case 'stopText':
                             // 停止
