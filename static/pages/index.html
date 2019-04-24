@@ -37,6 +37,7 @@
             </div>
             <div class="layui-btn-group">
                 <button class="layui-btn layui-btn-sm run-test" lay-event="runText">运行</button>
+                <button class="layui-btn layui-btn-sm run-test" lay-event="runTextDemo">运行测试</button>
                 <button class="layui-btn layui-btn-sm stop-test layui-btn-danger" lay-event="stopText">停止</button>
             </div>
         </div>
@@ -103,6 +104,7 @@
         var request = require('request');
         var fs = require('fs');
         var path = require('path');
+        var unzip = require("unzip");
         var pyPath = path.dirname(remote.app.getPath('exe'));
         var uploadLayer, uploadId;
 
@@ -133,8 +135,13 @@
                     type: 'get',
                     url: URL + '/list',
                     success(result) {
+                        var allData = result.list;
+                        for (var i = 0; i < allData.length; i++) {
+                            allData[i].content = allData[i].content.replace(/\n/g, "<br/>");
+                            allData[i].hope = allData[i].hope.replace(/\n/g, "<br/>");
+                        }
                         table.reload('demo', {
-                            data: result.list
+                            data: allData
                         });
                     }
                 })
@@ -395,16 +402,60 @@
                                 layer.msg('当前无执行用例');
                                 return;
                             }
-                            for (var i = 0; i < sortItems.length; i++) {
-                                (function (i) {
-                                    var _id = $(".sort-item")[i].className.replace("sort-item id", "");
-                                    var downPath = URL + `/zip/${_id}.zip`;
-                                    var filename = savePath + `/${i + 1}.zip`;
-                                    downloadFile(downPath, filename, function () {
-                                        console.log('第' + (i + 1) + '个文件下载完毕 id:' + _id);
-                                    });
-                                })(i);
-                            }
+                            var temp = 0;
+                            var unzipItem = setInterval(() => {
+                                if (temp == sortItems.length) {
+                                    clearInterval(unzipItem);
+                                    fs.readdir(__dirname, function (err, files) {
+                                        for (var i = 0; i < files.length; i++) {
+                                            (function (i) {
+                                                if (files[i].indexOf(".zip") != -1) {
+                                                    var extract = unzip.Extract({ path: __dirname + `/${files[i].split(".")[0]}` });
+                                                    extract.on('finish', function () {
+                                                        console.log("解压完成!!");
+                                                    });
+                                                    extract.on('error', function (err) {
+                                                        console.log(err);
+                                                    });
+                                                    fs.createReadStream(__dirname + `/${files[i]}`).pipe(extract);
+                                                }
+                                            })(i);
+                                        }
+                                    })
+                                }
+                            }, 5);
+                            setTimeout(() => {
+                                for (var i = 0; i < sortItems.length; i++) {
+                                    (function (i) {
+                                        var _id = $(".sort-item")[i].className.replace("sort-item id", "");
+                                        var downPath = URL + `/zip/${_id}.zip`;
+                                        var filename = savePath + `/${i + 1}.zip`;
+                                        downloadFile(downPath, filename, function () {
+                                            console.log('第' + (i + 1) + '个文件下载完毕 id:' + _id);
+                                            temp++;
+                                        });
+                                    })(i);
+                                }
+                            }, 0);
+                            break;
+                        case 'runTextDemo':
+                            console.log(__dirname + "/1.zip");
+                            fs.readdir(__dirname, function (err, files) {
+                                for (var i = 0; i < files.length; i++) {
+                                    (function (i) {
+                                        if (files[i].indexOf(".zip") != -1) {
+                                            var extract = unzip.Extract({ path: __dirname + `/${files[i].split(".")[0]}` });
+                                            extract.on('finish', function () {
+                                                console.log("解压完成!!");
+                                            });
+                                            extract.on('error', function (err) {
+                                                console.log(err);
+                                            });
+                                            fs.createReadStream(__dirname + `/${files[i]}`).pipe(extract);
+                                        }
+                                    })(i);
+                                }
+                            })
                             break;
                         case 'stopText':
                             // 停止
