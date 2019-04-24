@@ -28,7 +28,8 @@
         <div class="layui-btn-container">
             <div class="layui-btn-group">
                 <button class="layui-btn layui-btn-sm layui-btn-normal add-new-test" lay-event="addTest">新增用例</button>
-                <button class="layui-btn layui-btn-sm layui-btn-normal delete-mul" lay-event="deleteTest">删除用例</button>
+                <button class="layui-btn layui-btn-sm layui-btn-normal delete-mul"
+                    lay-event="deleteTest">批量删除用例</button>
             </div>
             <div class="layui-btn-group">
                 <button class="layui-btn layui-btn-sm layui-btn-normal goto-run" lay-event="addRun">加入执行</button>
@@ -82,9 +83,9 @@
             <div class="layui-field-box">
                 文件名：<span class="filename">无</span>
             </div>
-            <div class="layui-field-box">
+            <!-- <div class="layui-field-box">
                 文件路径：<span class="filepath">无</span>
-            </div>
+            </div> -->
             <div class="layui-field-box">
                 文件大小：<span class="filesize">无</span>
             </div>
@@ -128,38 +129,58 @@
 
             //重载数据
             function reloadTableData() {
-                // table.reload('demo', {
-                //     data: allData
-                // });
+                $.ajax({
+                    type: 'get',
+                    url: URL + '/list',
+                    success(result) {
+                        table.reload('demo', {
+                            data: result.list
+                        });
+                    }
+                })
             }
 
             //初始化上传文件组件
+            initUpload();
             function initUpload() {
+                var flag = true;
                 upload.render({ //允许上传的文件后缀
                     elem: '#zipfile'
                     , url: URL + '/uploads'
-                    , data: { id: uploadId + "" }
+                    , data: {
+                        id: function () {
+                            return uploadId + "";
+                        }
+                    }
                     , auto: false
                     , bindAction: '#uploadFile'
                     , size: 5120
                     , accept: 'file' //普通文件
                     , exts: 'zip' //只允许上传压缩文件
                     , choose: function (obj) {
-                        //将每次选择的文件追加到文件队列
-                        var files = obj.pushFile();
                         //预读本地文件，如果是多文件，则会遍历。(不支持ie8/9)
                         obj.preview(function (index, file, result) {
                             console.log(file);
                             $(".filename").text(file.name);
-                            $(".filepath").text(file.path);
-                            $(".filesize").text(~~(file.size / 1024) + "KB");
+                            // $(".filepath").text(file.path);
+                            $(".filesize").text((~~(file.size / 1024) + 1) + "KB");
+                            flag = true;
                         });
                     }
                     , before: function (obj) {
+                        if (!flag) {
+                            layer.msg('请先选择文件');
+                        }
+                        return flag;
                         layer.load();
                     }
                     , done: function (res, index, upload) {
-                        console.log(res)
+                        console.log(2);
+                        flag = false;
+                        $(".filename").text("无");
+                        // $(".filepath").text("无");
+                        $(".filesize").text("无");
+                        $(".layui-upload-file").val('');
                         layer.closeAll();
                         layer.msg('上传成功');
                         reloadTableData();
@@ -207,7 +228,6 @@
                             console.log("新增用例:", result);
                             uploadId = result.list._id;
                             layer.close(uploadLayer);
-                            initUpload();
                             layer.open({
                                 type: 1,
                                 title: '上传用例文件',
@@ -255,8 +275,8 @@
                     , defaultToolbar: ['filter', 'exports']
                     , cols: [[ //标题栏
                         { type: 'checkbox' }
-                        , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
-                        , { field: '_id', title: '编号', width: 210, sort: true, unresize: true }
+                        , { field: 'url', title: '脚本', width: 80, hide: false, unresize: true }
+                        , { field: '_id', title: '编号', width: 210, sort: true, hide: true, unresize: true }
                         , { field: 'title', title: '用例标题', unresize: true }
                         , { field: 'content', title: '用例步骤', unresize: true, hide: true }
                         , { field: 'hope', title: '用例预期', unresize: true, hide: true }
@@ -289,9 +309,32 @@
                                 return;
                             }
                             layer.confirm('确定要删除选中的用例？', function (index) {
-                                layer.msg('删除成功');
-                                reloadTableData();
-                                layer.close(index);
+                                var temp = 0;
+                                layer.load();
+                                var delItem = setInterval(() => {
+                                    if (temp == data.length) {
+                                        layer.msg('删除成功');
+                                        reloadTableData();
+                                        layer.closeAll();
+                                        clearInterval(delItem);
+                                    }
+                                }, 5);
+                                setTimeout(() => {
+                                    for (var i = 0; i < data.length; i++) {
+                                        (function (i) {
+                                            $.ajax({
+                                                type: 'get',
+                                                url: URL + '/delete',
+                                                data: {
+                                                    id: data[i]._id
+                                                },
+                                                success(result) {
+                                                    temp++;
+                                                }
+                                            })
+                                        })(i);
+                                    }
+                                }, 0);
                             });
                             break;
                         case 'addRun':
@@ -299,6 +342,10 @@
                             var len = $(".sort-item").length;
                             var data = checkStatus.data;
                             var view = document.getElementById('run-sort');
+                            if (data.length == 0) {
+                                layer.msg('请先选择需要加入执行的用例');
+                                return;
+                            }
                             if (view.innerHTML.indexOf("无数据") != -1 && data.length != 0) {
                                 view.innerHTML = "";
                             }
@@ -334,6 +381,9 @@
                                     view.innerHTML = "无数据";
                                     layer.close(index);
                                 });
+                            } else {
+                                layer.msg('当前无执行用例');
+                                return;
                             }
                             break;
                         case 'runText':
@@ -343,7 +393,7 @@
                             var sortItems = $(".sort-item");
                             console.log(sortItems);
                             if (sortItems.length == 0) {
-                                layer.msg('请先加入需要执行的用例');
+                                layer.msg('当前无执行用例');
                                 return;
                             }
                             for (var i = 0; i < sortItems.length; i++) {
@@ -367,10 +417,25 @@
                 //监听行工具事件
                 table.on('tool(test)', function (obj) {
                     var data = obj.data;
+                    var _id = data._id;
                     if (obj.event === 'del') {
                         layer.confirm('确定删除？', function (index) {
-                            obj.del();
-                            layer.close(index);
+                            $.ajax({
+                                type: 'get',
+                                url: URL + '/delete',
+                                data: {
+                                    id: _id
+                                },
+                                success(result) {
+                                    if (result.msg == "delete success!") {
+                                        layer.msg('删除成功');
+                                        obj.del();
+                                    } else {
+                                        layer.msg('删除失败');
+                                    }
+                                    layer.close(index);
+                                }
+                            })
                         });
                     }
                 });
