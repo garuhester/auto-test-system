@@ -296,6 +296,7 @@
                 //头工具栏事件
                 table.on('toolbar(test)', function (obj) {
                     var checkStatus = table.checkStatus(obj.config.id);
+                    var zipNum = 0;
                     switch (obj.event) {
                         case 'addTest':
                             //新增用例
@@ -404,6 +405,7 @@
                             }
                             layer.load();
                             var temp = 0;
+                            zipNum = sortItems.length;
                             var unzipItem = setInterval(() => {
                                 if (temp == sortItems.length) {
                                     clearInterval(unzipItem);
@@ -441,45 +443,34 @@
                             break;
                         case 'runTextDemo':
                             console.log(__dirname + "/1.zip");
-                            // fs.readdir(__dirname, function (err, files) {
-                            //     for (var i = 0; i < files.length; i++) {
-                            //         (function (i) {
-                            //             if (files[i].indexOf(".zip") != -1) {
-                            //                 var extract = unzip.Extract({ path: __dirname + `/${files[i].split(".")[0]}` });
-                            //                 extract.on('finish', function () {
-                            //                     console.log("解压完成!!");
-                            //                 });
-                            //                 extract.on('error', function (err) {
-                            //                     console.log(err);
-                            //                 });
-                            //                 fs.createReadStream(__dirname + `/${files[i]}`).pipe(extract);
+
+                            for (var i = 0; i < 2; i++) {
+                                var readDir = fs.readdirSync(__dirname + '');
+                                var data = fs.readFileSync(__dirname + `/${i + 1}/demo${i + 1}.py`);
+                                console.log("同步读取: " + data.toString());
+                            }
+
+                            // fs.mkdir(__dirname + "/run", function (err) {
+                            //     if (err) {
+                            //         console.error('创建文件夹出错！', err);
+                            //     } else {
+                            //         console.log('文件夹-创建成功！');
+
+                            //         fs.writeFile(__dirname + "/run/run.py", '', function (err) {
+                            //             if (err) {
+                            //                 return console.error('创建文件出错！', err);
                             //             }
-                            //         })(i);
+                            //             console.log("数据写入成功！");
+                            //             // fs.readFile(__dirname + "/run/run.py", function (err, data) {
+                            //             //     if (err) {
+                            //             //         return console.error(err);
+                            //             //     }
+                            //             //     console.log("异步读取文件数据: " + data.toString());
+                            //             // });
+                            //         });
                             //     }
-                            // })
-                            fs.mkdir(__dirname + "/run", function (err) {
-                                if (err) {
-                                    console.error('创建文件夹出错！', err);
-                                } else {
-                                    console.log('文件夹-创建成功！');
+                            // });
 
-                                    
-
-
-                                    fs.writeFile(__dirname + "/run/run.py", '', function (err) {
-                                        if (err) {
-                                            return console.error('创建文件出错！', err);
-                                        }
-                                        console.log("数据写入成功！");
-                                        // fs.readFile(__dirname + "/run/run.py", function (err, data) {
-                                        //     if (err) {
-                                        //         return console.error(err);
-                                        //     }
-                                        //     console.log("异步读取文件数据: " + data.toString());
-                                        // });
-                                    });
-                                }
-                            });
                             // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
                             break;
                         case 'stopText':
