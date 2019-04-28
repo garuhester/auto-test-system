@@ -107,6 +107,76 @@
         var unzip = require("unzip");
         var pyPath = path.dirname(remote.app.getPath('exe'));
         var uploadLayer, uploadId;
+        var runHtml = `
+# -*- encoding=utf8 -*-
+__author__ = "wewin"
+
+from airtest.core.api import *
+
+auto_setup(__file__)
+
+from poco.drivers.android.uiautomation import AndroidUiautomationPoco
+poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=False)                    
+
+`;
+
+        // runTest();
+        function runTest() {
+            console.log(__dirname + "/1.zip");
+
+            var temp = 0;
+            var allContent = [];
+            for (var i = 0; i < 2; i++) {
+                var readDir = fs.readdirSync(__dirname + `/${i + 1}`);
+                temp = 0;
+                for (var j = 0; j < readDir.length; j++) {
+                    if (readDir[j].split(".")[1] == "py") {
+                        temp = j;
+                        break;
+                    }
+                }
+                var data = fs.readFileSync(__dirname + `/${i + 1}/${readDir[temp]}`);
+                var content = data.toString();
+                content = content.substring(content.indexOf("#start"), content.indexOf("#end") + 4);
+                content = `#第${i + 1}个测试用例--------------------\n` + content + "\n#--------------------------------";
+                allContent.push(content);
+            }
+
+            console.log(allContent);
+
+            fs.mkdir(__dirname + "/run", function (err) {
+                var html = `
+# -*- encoding=utf8 -*-
+__author__ = "wewin"
+
+from airtest.core.api import *
+
+auto_setup(__file__)
+
+from poco.drivers.android.uiautomation import AndroidUiautomationPoco
+poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=False)                    
+
+`;
+                for (var i = 0; i < allContent.length; i++) {
+                    html += allContent[i];
+                    html += "\n\n";
+                }
+                fs.writeFile(__dirname + "/run/run.py", html, function (err) {
+                    if (err) {
+                        return console.error('创建文件出错！', err);
+                    }
+                    console.log("数据写入成功！");
+                    // fs.readFile(__dirname + "/run/run.py", function (err, data) {
+                    //     if (err) {
+                    //         return console.error(err);
+                    //     }
+                    //     console.log("异步读取文件数据: " + data.toString());
+                    // });
+                });
+            });
+
+            // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
+        }
 
         initSortable();
         //初始化拖拽
@@ -320,9 +390,9 @@
                                 layer.load();
                                 var delItem = setInterval(() => {
                                     if (temp == data.length) {
-                                        layer.msg('删除成功');
                                         reloadTableData();
                                         layer.closeAll();
+                                        layer.msg('删除成功');
                                         clearInterval(delItem);
                                     }
                                 }, 5);
@@ -409,22 +479,72 @@
                             var unzipItem = setInterval(() => {
                                 if (temp == sortItems.length) {
                                     clearInterval(unzipItem);
-                                    fs.readdir(__dirname, function (err, files) {
-                                        for (var i = 0; i < files.length; i++) {
+                                    var readZipDir = fs.readdirSync(__dirname);
+                                    var temp2 = 0, zipNum = 0;
+                                    for (var i = 0; i < readZipDir.length; i++) {
+                                        if (readZipDir[i].indexOf(".zip") != -1) {
+                                            zipNum++;
+                                        }
+                                    }
+                                    var runItem = setInterval(() => {
+                                        if (temp2 == zipNum) {
+                                            clearInterval(runItem);
+                                            layer.closeAll();
+                                            var temp3 = 0;
+                                            var allContent = [];
+                                            setTimeout(() => {
+                                                for (var q = 0; q < zipNum; q++) {
+                                                    var readDir = fs.readdirSync(__dirname + `/${q + 1}`);
+                                                    temp3 = 0;
+                                                    for (var j = 0; j < readDir.length; j++) {
+                                                        if (readDir[j].split(".")[1] == "py") {
+                                                            temp3 = j;
+                                                            break;
+                                                        }
+                                                    }
+                                                    var data = fs.readFileSync(__dirname + `/${q + 1}/${readDir[temp3]}`);
+                                                    var content = data.toString();
+                                                    content = content.substring(content.indexOf("#start"), content.indexOf("#end") + 4);
+                                                    content = `#第${q + 1}个测试用例--------------------\n` + content + "\n#--------------------------------";
+                                                    allContent.push(content);
+                                                }
+
+                                                console.log(allContent);
+
+                                                fs.mkdir(__dirname + "/run", function (err) {
+                                                    var html = runHtml;
+                                                    for (var i = 0; i < allContent.length; i++) {
+                                                        html += allContent[i];
+                                                        html += "\n\n";
+                                                    }
+                                                    fs.writeFile(__dirname + "/run/run.py", html, function (err) {
+                                                        if (err) {
+                                                            return console.error('创建文件出错！', err);
+                                                        }
+                                                        console.log("数据写入成功！");
+                                                        // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
+                                                    });
+                                                });
+                                            }, 1000);
+                                        }
+                                    }, 5);
+                                    setTimeout(() => {
+                                        for (var i = 0; i < readZipDir.length; i++) {
                                             (function (i) {
-                                                if (files[i].indexOf(".zip") != -1) {
-                                                    var extract = unzip.Extract({ path: __dirname + `/${files[i].split(".")[0]}` });
+                                                if (readZipDir[i].indexOf(".zip") != -1) {
+                                                    var extract = unzip.Extract({ path: __dirname + `/${readZipDir[i].split(".")[0]}` });
                                                     extract.on('finish', function () {
                                                         console.log("解压完成!!");
+                                                        temp2++;
                                                     });
                                                     extract.on('error', function (err) {
                                                         console.log(err);
                                                     });
-                                                    fs.createReadStream(__dirname + `/${files[i]}`).pipe(extract);
+                                                    fs.createReadStream(__dirname + `/${readZipDir[i]}`).pipe(extract);
                                                 }
                                             })(i);
                                         }
-                                    })
+                                    }, 0);
                                 }
                             }, 5);
                             setTimeout(() => {
@@ -442,36 +562,7 @@
                             }, 0);
                             break;
                         case 'runTextDemo':
-                            console.log(__dirname + "/1.zip");
 
-                            for (var i = 0; i < 2; i++) {
-                                var readDir = fs.readdirSync(__dirname + '');
-                                var data = fs.readFileSync(__dirname + `/${i + 1}/demo${i + 1}.py`);
-                                console.log("同步读取: " + data.toString());
-                            }
-
-                            // fs.mkdir(__dirname + "/run", function (err) {
-                            //     if (err) {
-                            //         console.error('创建文件夹出错！', err);
-                            //     } else {
-                            //         console.log('文件夹-创建成功！');
-
-                            //         fs.writeFile(__dirname + "/run/run.py", '', function (err) {
-                            //             if (err) {
-                            //                 return console.error('创建文件出错！', err);
-                            //             }
-                            //             console.log("数据写入成功！");
-                            //             // fs.readFile(__dirname + "/run/run.py", function (err, data) {
-                            //             //     if (err) {
-                            //             //         return console.error(err);
-                            //             //     }
-                            //             //     console.log("异步读取文件数据: " + data.toString());
-                            //             // });
-                            //         });
-                            //     }
-                            // });
-
-                            // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
                             break;
                         case 'stopText':
                             // 停止
