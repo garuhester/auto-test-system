@@ -118,7 +118,7 @@ f2 = open("./auto-test-log.txt","w+")
 
 def writeLog(file, content):
     file.write(content)
-    file.write("\n")
+    file.write("\\n")
 
 def endLog():
     f1.close()
@@ -505,22 +505,24 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             break;
                         case 'runText':
                             //运行
-                            $(".runlist .mask").addClass("active");
                             var data = checkStatus.data;
-                            var savePath = __dirname;
+                            var savePath = pyPath + "/temp";
                             var sortItems = $(".sort-item");
-                            console.log(sortItems);
                             if (sortItems.length == 0) {
                                 layer.msg('当前无执行用例');
                                 return;
                             }
+                            showRunning(1);
+                            try {
+                                fs.mkdirSync(savePath)
+                            } catch (error) { }
                             layer.load();
                             var temp = 0;
                             zipNum = sortItems.length;
                             var unzipItem = setInterval(() => {
                                 if (temp == sortItems.length) {
                                     clearInterval(unzipItem);
-                                    var readZipDir = fs.readdirSync(__dirname);
+                                    var readZipDir = fs.readdirSync(savePath);
                                     var temp2 = 0, zipNum = 0;
                                     for (var i = 0; i < readZipDir.length; i++) {
                                         if (readZipDir[i].indexOf(".zip") != -1) {
@@ -534,7 +536,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                             var allContent = [];
                                             setTimeout(() => {
                                                 for (var q = 0; q < zipNum; q++) {
-                                                    var readDir = fs.readdirSync(__dirname + `/${q + 1}`);
+                                                    var readDir = fs.readdirSync(savePath + `/${q + 1}`);
                                                     temp3 = 0;
                                                     for (var j = 0; j < readDir.length; j++) {
                                                         if (readDir[j].split(".")[1] == "py") {
@@ -542,29 +544,62 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                             break;
                                                         }
                                                     }
-                                                    var data = fs.readFileSync(__dirname + `/${q + 1}/${readDir[temp3]}`);
+                                                    var data = fs.readFileSync(savePath + `/${q + 1}/${readDir[temp3]}`);
                                                     var content = data.toString();
                                                     content = content.substring(content.indexOf("#start"), content.indexOf("#end") + 4);
                                                     content = `#第${q + 1}个测试用例--------------------\n` + content + "\n#--------------------------------";
                                                     allContent.push(content);
                                                 }
 
-                                                console.log(allContent);
-
-                                                fs.mkdir(__dirname + "/run", function (err) {
+                                                fs.mkdir(savePath + "/run", function (err) {
                                                     var html = runHtml;
                                                     for (var i = 0; i < allContent.length; i++) {
                                                         html += allContent[i];
                                                         html += "\n\n";
                                                     }
-                                                    fs.writeFile(__dirname + "/run/run.py", html, function (err) {
+                                                    fs.writeFile(savePath + "/run/run.py", html, function (err) {
                                                         if (err) {
                                                             return console.error('创建文件出错！', err);
                                                         }
                                                         console.log("数据写入成功！");
                                                         layer.closeAll();
                                                         layer.msg("执行成功");
-                                                        // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
+
+                                                        var logPath = path.resolve(__dirname, '../..');
+                                                        //online
+                                                        // logPath = pyPath;
+
+                                                        var runStatus = $(".run-status");
+                                                        var all = "", result = "", ii, iiLen, resultObj = {};
+                                                        running = setInterval(() => {
+                                                            try {
+                                                                var data = fs.readFileSync(logPath + "/status-show.txt");
+                                                                var content = data.toString();
+                                                                for (var i = 0; i < runStatus.length; i++) {
+                                                                    ii = i + 1;
+                                                                    iiLen = ii.toString().length;
+                                                                    if (iiLen == 1) {
+                                                                        all = content.substr(content.indexOf("$" + ii + "$"), 5);
+                                                                    } else if (iiLen == 2) {
+                                                                        all = content.substr(content.indexOf("$" + ii + "$"), 6);
+                                                                    } else if (iiLen == 3) {
+                                                                        all = content.substr(content.indexOf("$" + ii + "$"), 7);
+                                                                    }
+                                                                    result = all.split("-")[1];
+                                                                    resultObj["item" + ii] = result;
+                                                                    if (result == "s") {
+                                                                        runStatus[i].className = "run-status success";
+                                                                    } else if (result == "f") {
+                                                                        runStatus[i].className = "run-status fail";
+                                                                    } else {
+                                                                        runStatus[i].className = "run-status";
+                                                                    }
+                                                                }
+                                                            } catch (error) { }
+                                                        }, 300);
+                                                        setTimeout(() => {
+                                                            child_process.exec(`start cmd.exe /K python \"${savePath}/run/run.py\"`);
+                                                        }, 0);
                                                     });
                                                 });
                                             }, 1500);
@@ -574,7 +609,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                         for (var i = 0; i < readZipDir.length; i++) {
                                             (function (i) {
                                                 if (readZipDir[i].indexOf(".zip") != -1) {
-                                                    var extract = unzip.Extract({ path: __dirname + `/${readZipDir[i].split(".")[0]}` });
+                                                    var extract = unzip.Extract({ path: savePath + `/${readZipDir[i].split(".")[0]}` });
                                                     extract.on('finish', function () {
                                                         console.log("解压完成!!");
                                                         temp2++;
@@ -582,7 +617,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                     extract.on('error', function (err) {
                                                         console.log(err);
                                                     });
-                                                    fs.createReadStream(__dirname + `/${readZipDir[i]}`).pipe(extract);
+                                                    fs.createReadStream(savePath + `/${readZipDir[i]}`).pipe(extract);
                                                 }
                                             })(i);
                                         }
@@ -604,7 +639,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             }, 0);
                             break;
                         case 'runTextDemo':
-                            $(".runlist .mask").addClass("active");
+                            showRunning(1);
                             var logPath = path.resolve(__dirname, '../..');
                             var runStatus = $(".run-status");
                             var all = "", result = "", ii, iiLen, resultObj = {};
@@ -644,7 +679,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             for (var i = 0; i < runStatus.length; i++) {
                                 runStatus[i].className = "run-status";
                             }
-                            $(".runlist .mask").removeClass("active");
+                            showRunning(0);
                             break;
                     };
                 });
@@ -677,6 +712,15 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
             }
 
         });
+
+        function showRunning(type) {
+            if (type == 0) {
+                $(".runlist .mask").removeClass("active");
+            }
+            if (type == 1) {
+                $(".runlist .mask").addClass("active");
+            }
+        }
 
         function downloadFile(uri, filename, callback) {
             var stream = fs.createWriteStream(filename);
