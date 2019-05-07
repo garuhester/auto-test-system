@@ -8,16 +8,13 @@ auto_setup(__file__)
 from poco.drivers.android.uiautomation import AndroidUiautomationPoco
 poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=False)
 #start
-time = 0
-while time < 3:
+while True:
     try:
-        # 执行命令
         poco(text="计算器").click()
         break
     except:
-        # 发生了异常，次数+1
-        time = time + 1
-
-        # 回到初始状态
+        print('发生了异常')
         home()
+    finally:
+        print('最后执行')
 #end

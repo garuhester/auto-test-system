@@ -50,6 +50,32 @@ html {
     box-sizing: border-box;
     overflow-y: auto;
     float: left;
+    position: relative;
+}
+
+.runlist .mask {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(100, 100, 100, 0.1);
+    z-index: 999;
+}
+
+.runlist .mask::after {
+    content: '运行中...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    color: #9c9c9c;
+}
+
+.runlist .mask.active {
+    display: block;
 }
 
 .edit-btns {
@@ -64,20 +90,25 @@ html {
 }
 
 #run-sort .sort-item {
-    padding: 17px 20px 17px 20px;
+    padding: 17px 50px 17px 13px;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     background: rgb(79, 179, 255);
     margin-bottom: 10px;
     border-radius: 2px;
     color: #fff;
+    position: relative;
+    word-break: break-all;
 }
 
 #run-sort .sort-item .layui-icon {
+    margin-top: 1px;
     cursor: pointer;
-    float: right;
     font-size: 17px;
-    margin-top: 2px;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    right: 7px;
 }
 
 .layui-elem-quote {
@@ -138,4 +169,29 @@ html {
 
 [data-field=title] {
     font-weight: bold;
+}
+
+.run-index {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.run-status {
+    width: 13px;
+    height: 13px;
+    position: absolute;
+    right: 28px;
+    top: 50%;
+    transform: translate(0, -50%);
+    border-radius: 50%;
+}
+
+.run-status.success {
+    background: #77f368;
+    box-shadow: 0px 0px 10px rgba(119, 243, 104, 0.6);
+}
+
+.run-status.fail {
+    background: #ff5b5b;
+    box-shadow: 0px 0px 10px rgba(255, 91, 91, 0.6);
 }

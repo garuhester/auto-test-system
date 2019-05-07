@@ -22,6 +22,7 @@
                 <br>(鼠标拖放调整顺序)</blockquote>
             <hr class="layui-bg-orange">
             <div id="run-sort">无数据</div>
+            <div class="mask"></div>
         </div>
     </div>
     <div class="disactive" id="toolbarDemo">
@@ -107,7 +108,45 @@
         var unzip = require("unzip");
         var pyPath = path.dirname(remote.app.getPath('exe'));
         var uploadLayer, uploadId;
+        var running;
         var runHtml = `
+# -*- encoding=utf8 -*-
+import os
+import time
+f1 = open("./status-show.txt","w+")
+f2 = open("./auto-test-log.txt","w+")
+
+def writeLog(file, content):
+    file.write(content)
+    file.write("\n")
+
+def endLog():
+    f1.close()
+    f2.close()  
+
+writeLog(f1,"#start")
+writeLog(f2,"#start")
+
+writeLog(f2,"-------------------------")
+writeLog(f1,"$1$-s")
+writeLog(f2,"√ 第1个测试用例-执行成功")
+writeLog(f2,"-------------------------")
+
+endLog()
+f1 = open("./status-show.txt","a+")
+f2 = open("./auto-test-log.txt","a+")
+writeLog(f2,"")
+time.sleep(2)
+
+writeLog(f2,"-------------------------")
+writeLog(f1,"$2$-f")
+writeLog(f2,"× 第2个测试用例-执行失败")
+writeLog(f2,"-------------------------")
+
+writeLog(f1,"#end")
+writeLog(f2,"#end")
+endLog()
+
 # -*- encoding=utf8 -*-
 __author__ = "wewin"
 
@@ -186,7 +225,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                 animation: 150,
                 ghostClass: 'blue-background-class',
                 onUpdate: function (evt) {
-                    console.log(1);
+                    resetRunIndex();
                 },
             });
         }
@@ -428,7 +467,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             }
                             if (len == 0) {
                                 for (var i = 0; i < data.length; i++) {
-                                    view.innerHTML += `<div class="sort-item id${data[i]._id}">${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                                    view.innerHTML += `<div class="sort-item id${data[i]._id}"><div class="run-status"></div><span class="run-index"></span>${data[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
                                 }
                             } else {
                                 var newArr = [];
@@ -446,9 +485,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                 }
                                 console.log(newArr);
                                 for (var i = 0; i < newArr.length; i++) {
-                                    view.innerHTML += `<div class="sort-item id${newArr[i]._id}">${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
+                                    view.innerHTML += `<div class="sort-item id${newArr[i]._id}"><div class="run-status"></div><span class="run-index"></span>${newArr[i].title}<i class="layui-icon layui-icon-close" onclick="delItem(this)"></i></div>`;
                                 }
                             }
+                            resetRunIndex();
                             break;
                         case 'deleteRun':
                             //删除执行
@@ -465,6 +505,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             break;
                         case 'runText':
                             //运行
+                            $(".runlist .mask").addClass("active");
                             var data = checkStatus.data;
                             var savePath = __dirname;
                             var sortItems = $(".sort-item");
@@ -489,7 +530,6 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                     var runItem = setInterval(() => {
                                         if (temp2 == zipNum) {
                                             clearInterval(runItem);
-                                            layer.closeAll();
                                             var temp3 = 0;
                                             var allContent = [];
                                             setTimeout(() => {
@@ -522,10 +562,12 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                             return console.error('创建文件出错！', err);
                                                         }
                                                         console.log("数据写入成功！");
+                                                        layer.closeAll();
+                                                        layer.msg("执行成功");
                                                         // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
                                                     });
                                                 });
-                                            }, 1000);
+                                            }, 1500);
                                         }
                                     }, 5);
                                     setTimeout(() => {
@@ -562,11 +604,47 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             }, 0);
                             break;
                         case 'runTextDemo':
-
+                            $(".runlist .mask").addClass("active");
+                            var logPath = path.resolve(__dirname, '../..');
+                            var runStatus = $(".run-status");
+                            var all = "", result = "", ii, iiLen, resultObj = {};
+                            running = setInterval(() => {
+                                var data = fs.readFileSync(logPath + "/status-show.txt");
+                                var content = data.toString();
+                                for (var i = 0; i < runStatus.length; i++) {
+                                    ii = i + 1;
+                                    iiLen = ii.toString().length;
+                                    if (iiLen == 1) {
+                                        all = content.substr(content.indexOf("$" + ii + "$"), 5);
+                                    } else if (iiLen == 2) {
+                                        all = content.substr(content.indexOf("$" + ii + "$"), 6);
+                                    } else if (iiLen == 3) {
+                                        all = content.substr(content.indexOf("$" + ii + "$"), 7);
+                                    }
+                                    result = all.split("-")[1];
+                                    resultObj["item" + ii] = result;
+                                    if (result == "s") {
+                                        runStatus[i].className = "run-status success";
+                                    } else if (result == "f") {
+                                        runStatus[i].className = "run-status fail";
+                                    } else {
+                                        runStatus[i].className = "run-status";
+                                    }
+                                }
+                            }, 300);
+                            setTimeout(() => {
+                                child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
+                            }, 0);
                             break;
                         case 'stopText':
                             // 停止
                             var data = checkStatus.data;
+                            clearInterval(running);
+                            var runStatus = $(".run-status");
+                            for (var i = 0; i < runStatus.length; i++) {
+                                runStatus[i].className = "run-status";
+                            }
+                            $(".runlist .mask").removeClass("active");
                             break;
                     };
                 });
@@ -614,7 +692,20 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                     view.innerHTML = "无数据";
                 }
                 layer.close(index);
+                resetRunIndex();
             });
+        }
+
+        function resetRunIndex() {
+            var runIndex = $(".run-index");
+            var runStatus = $(".run-status");
+            for (var i = 0; i < runStatus.length; i++) {
+                runStatus[i].className = "run-status";
+            }
+            for (var i = 0; i < runIndex.length; i++) {
+                runIndex[i].innerHTML = i + 1 + ". ";
+                runStatus[i].className += " s" + (i + 1);
+            }
         }
 
         function RunTest(num) {
