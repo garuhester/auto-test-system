@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "request": "^2.88.0",
+    "rimraf": "^2.6.3",
     "unzip": "^0.1.11"
   }
 }

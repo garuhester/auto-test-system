@@ -38,7 +38,7 @@
             </div>
             <div class="layui-btn-group">
                 <button class="layui-btn layui-btn-sm run-test" lay-event="runText">运行</button>
-                <button class="layui-btn layui-btn-sm run-test" lay-event="runTextDemo">运行测试</button>
+                <!-- <button class="layui-btn layui-btn-sm run-test" lay-event="runTextDemo">运行测试</button> -->
                 <button class="layui-btn layui-btn-sm stop-test layui-btn-danger" lay-event="stopText">停止</button>
             </div>
         </div>
@@ -106,6 +106,8 @@
         var fs = require('fs');
         var path = require('path');
         var unzip = require("unzip");
+        var rimraf = require('rimraf');
+
         var pyPath = path.dirname(remote.app.getPath('exe'));
         var uploadLayer, uploadId;
         var running;
@@ -113,8 +115,10 @@
 # -*- encoding=utf8 -*-
 import os
 import time
+
+nowDate = time.strftime('%Y-%m-%d-%H-%M-%S',time.localtime(time.time())) + "";
 f1 = open("./status-show.txt","w+")
-f2 = open("./auto-test-log.txt","w+")
+f2 = open("./logs/auto-test-log(" + nowDate + ").txt","w+")
 
 def writeLog(file, content):
     file.write(content)
@@ -127,26 +131,6 @@ def endLog():
 writeLog(f1,"#start")
 writeLog(f2,"#start")
 
-writeLog(f2,"-------------------------")
-writeLog(f1,"$1$-s")
-writeLog(f2,"√ 第1个测试用例-执行成功")
-writeLog(f2,"-------------------------")
-
-endLog()
-f1 = open("./status-show.txt","a+")
-f2 = open("./auto-test-log.txt","a+")
-writeLog(f2,"")
-time.sleep(2)
-
-writeLog(f2,"-------------------------")
-writeLog(f1,"$2$-f")
-writeLog(f2,"× 第2个测试用例-执行失败")
-writeLog(f2,"-------------------------")
-
-writeLog(f1,"#end")
-writeLog(f2,"#end")
-endLog()
-
 # -*- encoding=utf8 -*-
 __author__ = "wewin"
 
@@ -158,64 +142,6 @@ from poco.drivers.android.uiautomation import AndroidUiautomationPoco
 poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=False)                    
 
 `;
-
-        // runTest();
-        function runTest() {
-            console.log(__dirname + "/1.zip");
-
-            var temp = 0;
-            var allContent = [];
-            for (var i = 0; i < 2; i++) {
-                var readDir = fs.readdirSync(__dirname + `/${i + 1}`);
-                temp = 0;
-                for (var j = 0; j < readDir.length; j++) {
-                    if (readDir[j].split(".")[1] == "py") {
-                        temp = j;
-                        break;
-                    }
-                }
-                var data = fs.readFileSync(__dirname + `/${i + 1}/${readDir[temp]}`);
-                var content = data.toString();
-                content = content.substring(content.indexOf("#start"), content.indexOf("#end") + 4);
-                content = `#第${i + 1}个测试用例--------------------\n` + content + "\n#--------------------------------";
-                allContent.push(content);
-            }
-
-            console.log(allContent);
-
-            fs.mkdir(__dirname + "/run", function (err) {
-                var html = `
-# -*- encoding=utf8 -*-
-__author__ = "wewin"
-
-from airtest.core.api import *
-
-auto_setup(__file__)
-
-from poco.drivers.android.uiautomation import AndroidUiautomationPoco
-poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=False)                    
-
-`;
-                for (var i = 0; i < allContent.length; i++) {
-                    html += allContent[i];
-                    html += "\n\n";
-                }
-                fs.writeFile(__dirname + "/run/run.py", html, function (err) {
-                    if (err) {
-                        return console.error('创建文件出错！', err);
-                    }
-                    console.log("数据写入成功！");
-                    // fs.readFile(__dirname + "/run/run.py", function (err, data) {
-                    //     if (err) {
-                    //         return console.error(err);
-                    //     }
-                    //     console.log("异步读取文件数据: " + data.toString());
-                    // });
-                });
-            });
-
-            // child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
-        }
 
         initSortable();
         //初始化拖拽
@@ -507,6 +433,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             //运行
                             var data = checkStatus.data;
                             var savePath = pyPath + "/temp";
+                            var autoTestLogPath = pyPath + "/logs";
                             var sortItems = $(".sort-item");
                             if (sortItems.length == 0) {
                                 layer.msg('当前无执行用例');
@@ -515,6 +442,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             showRunning(1);
                             try {
                                 fs.mkdirSync(savePath)
+                                fs.mkdirSync(autoTestLogPath)
                             } catch (error) { }
                             layer.load();
                             var temp = 0;
@@ -555,8 +483,23 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                     var html = runHtml;
                                                     for (var i = 0; i < allContent.length; i++) {
                                                         html += allContent[i];
+                                                        html += `
+        writeLog(f1,"$${i + 1}$-f")
+        writeLog(f2,"× 第${i + 1}个测试用例-执行失败")
+
+writeLog(f1,"$${i + 1}$-s")
+writeLog(f2,"√ 第${i + 1}个测试用例-执行成功")
+
+endLog()
+f1 = open("./status-show.txt","a+")
+f2 = open("./logs/auto-test-log(" + nowDate + ").txt","w+")
+writeLog(f2,"")`;
                                                         html += "\n\n";
                                                     }
+                                                    html += `
+writeLog(f1,"#end")
+writeLog(f2,"#end")
+endLog()`;
                                                     fs.writeFile(savePath + "/run/run.py", html, function (err) {
                                                         if (err) {
                                                             return console.error('创建文件出错！', err);
@@ -579,11 +522,11 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                                     ii = i + 1;
                                                                     iiLen = ii.toString().length;
                                                                     if (iiLen == 1) {
-                                                                        all = content.substr(content.indexOf("$" + ii + "$"), 5);
+                                                                        all = content.substr(content.lastIndexOf("$" + ii + "$"), 5);
                                                                     } else if (iiLen == 2) {
-                                                                        all = content.substr(content.indexOf("$" + ii + "$"), 6);
+                                                                        all = content.substr(content.lastIndexOf("$" + ii + "$"), 6);
                                                                     } else if (iiLen == 3) {
-                                                                        all = content.substr(content.indexOf("$" + ii + "$"), 7);
+                                                                        all = content.substr(content.lastIndexOf("$" + ii + "$"), 7);
                                                                     }
                                                                     result = all.split("-")[1];
                                                                     resultObj["item" + ii] = result;
@@ -639,37 +582,6 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             }, 0);
                             break;
                         case 'runTextDemo':
-                            showRunning(1);
-                            var logPath = path.resolve(__dirname, '../..');
-                            var runStatus = $(".run-status");
-                            var all = "", result = "", ii, iiLen, resultObj = {};
-                            running = setInterval(() => {
-                                var data = fs.readFileSync(logPath + "/status-show.txt");
-                                var content = data.toString();
-                                for (var i = 0; i < runStatus.length; i++) {
-                                    ii = i + 1;
-                                    iiLen = ii.toString().length;
-                                    if (iiLen == 1) {
-                                        all = content.substr(content.indexOf("$" + ii + "$"), 5);
-                                    } else if (iiLen == 2) {
-                                        all = content.substr(content.indexOf("$" + ii + "$"), 6);
-                                    } else if (iiLen == 3) {
-                                        all = content.substr(content.indexOf("$" + ii + "$"), 7);
-                                    }
-                                    result = all.split("-")[1];
-                                    resultObj["item" + ii] = result;
-                                    if (result == "s") {
-                                        runStatus[i].className = "run-status success";
-                                    } else if (result == "f") {
-                                        runStatus[i].className = "run-status fail";
-                                    } else {
-                                        runStatus[i].className = "run-status";
-                                    }
-                                }
-                            }, 300);
-                            setTimeout(() => {
-                                child_process.exec(`start cmd.exe /K python \"${__dirname}/run/run.py\"`);
-                            }, 0);
                             break;
                         case 'stopText':
                             // 停止
@@ -678,6 +590,22 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             var runStatus = $(".run-status");
                             for (var i = 0; i < runStatus.length; i++) {
                                 runStatus[i].className = "run-status";
+                            }
+
+                            var logPath = path.resolve(__dirname, '../..');
+                            //online
+                            // logPath = pyPath;
+                            var paths = [pyPath + "/temp", logPath + "/status-show.txt"];
+                            for (var i = 0; i < paths.length; i++) {
+                                (function (i) {
+                                    rimraf(paths[i], function (err) {
+                                        if (err) {
+                                            console.log(err);
+                                            return;
+                                        }
+                                        console.log("temp del complete");
+                                    });
+                                })(i);
                             }
                             showRunning(0);
                             break;
