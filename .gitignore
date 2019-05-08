@@ -1,3 +1,5 @@
 node_modules/
 auto-test-system-win32-x64/
 testing-files/
+logs/
+status-show.txt

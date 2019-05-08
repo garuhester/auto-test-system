@@ -587,6 +587,7 @@ endLog()`;
                             // 停止
                             var data = checkStatus.data;
                             clearInterval(running);
+
                             var runStatus = $(".run-status");
                             for (var i = 0; i < runStatus.length; i++) {
                                 runStatus[i].className = "run-status";
@@ -603,7 +604,7 @@ endLog()`;
                                             console.log(err);
                                             return;
                                         }
-                                        console.log("temp del complete");
+                                        console.log(paths[i] + " del complete");
                                     });
                                 })(i);
                             }
