@@ -109,6 +109,9 @@
         var rimraf = require('rimraf');
 
         var pyPath = path.dirname(remote.app.getPath('exe'));
+        var logPath = path.resolve(__dirname, '../..');
+        //online
+        // logPath = pyPath;
         var uploadLayer, uploadId;
         var running;
         var runHtml = `
@@ -508,10 +511,6 @@ endLog()`;
                                                         layer.closeAll();
                                                         layer.msg("执行成功");
 
-                                                        var logPath = path.resolve(__dirname, '../..');
-                                                        //online
-                                                        // logPath = pyPath;
-
                                                         var runStatus = $(".run-status");
                                                         var all = "", result = "", ii, iiLen, resultObj = {};
                                                         running = setInterval(() => {
@@ -592,10 +591,7 @@ endLog()`;
                             for (var i = 0; i < runStatus.length; i++) {
                                 runStatus[i].className = "run-status";
                             }
-
-                            var logPath = path.resolve(__dirname, '../..');
-                            //online
-                            // logPath = pyPath;
+                            
                             var paths = [pyPath + "/temp", logPath + "/status-show.txt"];
                             for (var i = 0; i < paths.length; i++) {
                                 (function (i) {

@@ -1,8 +1,6 @@
 const electron = require("electron");
 const { app, BrowserWindow, Menu, shell, Tray, dialog } = electron;
-
 var win = null;
-
 
 app.on('ready', function () {
     // const { width, height } = electron.screen.getPrimaryDisplay().workAreaSize;
@@ -26,13 +24,50 @@ app.on('ready', function () {
     // console.log(dialog.showOpenDialog({ properties: ["openFile", "openDirectory", "multiSelections"] }));
 
     //自定义菜单
-    // const template = [
-    //     {
-    //         label: "自定义菜单",
-    //         submenu: [{ label: "菜单项-1" }, { label: "菜单项-2" }]
-    //     }
-    // ];
-    // win.setMenu(Menu.buildFromTemplate(template));
+    let template = [
+        {
+            label: '操作',
+            submenu: [
+                {
+                    label: '打开日志目录',
+                    click: function (item, focusedWindow) {
+                        electron.shell.openExternal(`${__dirname}/logs`);
+                    }
+                }, {
+                    label: '重新加载',
+                    accelerator: 'CmdOrCtrl+R',
+                    click: function (item, focusedWindow) {
+                        if (focusedWindow) {
+                            // on reload, start fresh and close any old
+                            // open secondary windows
+                            if (focusedWindow.id === 1) {
+                                BrowserWindow.getAllWindows().forEach(function (win) {
+                                    if (win.id > 1) {
+                                        win.close()
+                                    }
+                                })
+                            }
+                            focusedWindow.reload()
+                        }
+                    }
+                }, {
+                    label: '切换开发者工具',
+                    accelerator: (function () {
+                        if (process.platform === 'darwin') {
+                            return 'Alt+Command+I'
+                        } else {
+                            return 'Ctrl+Shift+I'
+                        }
+                    })(),
+                    click: function (item, focusedWindow) {
+                        if (focusedWindow) {
+                            focusedWindow.toggleDevTools()
+                        }
+                    }
+                }]
+        }
+    ];
+    win.setMenu(Menu.buildFromTemplate(template));
 
     //打开系统默认浏览器
     // shell.openExternal("https://github.com");
