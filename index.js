@@ -2,6 +2,9 @@ const electron = require("electron");
 const { app, BrowserWindow, Menu, shell, Tray, dialog } = electron;
 var win = null;
 
+var path = require('path');
+var pyPath = path.dirname(app.getPath('exe'));
+
 app.on('ready', function () {
     // const { width, height } = electron.screen.getPrimaryDisplay().workAreaSize;
     win = new BrowserWindow({
@@ -15,7 +18,7 @@ app.on('ready', function () {
     })
 
     win.loadURL(`file://${__dirname}/static/pages/index.html`);
-    win.openDevTools();
+    // win.openDevTools();
     win.on('closed', () => {
         win = null;
     })
@@ -31,7 +34,7 @@ app.on('ready', function () {
                 {
                     label: '打开日志目录',
                     click: function (item, focusedWindow) {
-                        electron.shell.openExternal(`${__dirname}/logs`);
+                        electron.shell.openExternal(`${pyPath}/logs`);
                     }
                 }, {
                     label: '重新加载',

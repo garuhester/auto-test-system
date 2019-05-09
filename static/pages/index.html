@@ -111,9 +111,14 @@
         var pyPath = path.dirname(remote.app.getPath('exe'));
         var logPath = path.resolve(__dirname, '../..');
         //online
-        // logPath = pyPath;
+        logPath = pyPath;
+
+        try {
+            fs.mkdirSync(logPath + "/logs");
+        } catch (error) { }
+
         var uploadLayer, uploadId;
-        var running;
+        var runningLoop, isRunning = 0;
         var runHtml = `
 # -*- encoding=utf8 -*-
 import os
@@ -276,7 +281,22 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                 type: 1,
                                 title: '上传用例文件',
                                 area: ['55%'],
-                                content: $("#addTest2")
+                                content: $("#addTest2"),
+                                cancel: function (index, layero) {
+                                    if (confirm('确定要关闭么')) {
+                                        $.ajax({
+                                            type: 'get',
+                                            url: URL + '/delete',
+                                            data: {
+                                                id: uploadId
+                                            },
+                                            success(result) {
+                                                layer.close(index);
+                                            }
+                                        })
+                                    }
+                                    return false;
+                                }
                             });
                         }
                     })
@@ -319,7 +339,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                     , defaultToolbar: ['filter', 'exports']
                     , cols: [[ //标题栏
                         { type: 'checkbox' }
-                        , { field: 'url', title: '脚本', width: 80, hide: false, unresize: true }
+                        , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
                         , { field: '_id', title: '编号', width: 210, sort: true, hide: true, unresize: true }
                         , { field: 'title', title: '用例标题', unresize: true }
                         , { field: 'content', title: '用例步骤', unresize: true, hide: true }
@@ -337,6 +357,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                     var zipNum = 0;
                     switch (obj.event) {
                         case 'addTest':
+                            if (isRun()) {
+                                alert("正在运行中，请先停止！");
+                                return;
+                            }
                             //新增用例
                             var data = checkStatus.data;
                             uploadLayer = layer.open({
@@ -347,6 +371,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             });
                             break;
                         case 'deleteTest':
+                            if (isRun()) {
+                                alert("正在运行中，请先停止！");
+                                return;
+                            }
                             //批量删除
                             var data = checkStatus.data;
                             if (data.length == 0) {
@@ -383,6 +411,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             });
                             break;
                         case 'addRun':
+                            if (isRun()) {
+                                alert("正在运行中，请先停止！");
+                                return;
+                            }
                             //加入执行
                             var len = $(".sort-item").length;
                             var data = checkStatus.data;
@@ -420,6 +452,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             resetRunIndex();
                             break;
                         case 'deleteRun':
+                            if (isRun()) {
+                                alert("正在运行中，请先停止！");
+                                return;
+                            }
                             //删除执行
                             if ($(".sort-item").length != 0) {
                                 layer.confirm('确定要删除全部执行？', function (index) {
@@ -433,6 +469,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             }
                             break;
                         case 'runText':
+                            if (isRun()) {
+                                alert("正在运行中，请先停止！");
+                                return;
+                            }
                             //运行
                             var data = checkStatus.data;
                             var savePath = pyPath + "/temp";
@@ -478,6 +518,27 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                     var data = fs.readFileSync(savePath + `/${q + 1}/${readDir[temp3]}`);
                                                     var content = data.toString();
                                                     content = content.substring(content.indexOf("#start"), content.indexOf("#end") + 4);
+
+                                                    //success
+                                                    var one = content.split("#success")[0];
+                                                    var two = content.split("#success")[1];
+                                                    content = one;
+                                                    content += `
+        writeLog(f1,"$${q + 1}$-s")
+        writeLog(f2,"√ 第${q + 1}个测试用例-执行成功")
+                                                    `;
+                                                    content += two;
+
+                                                    //error
+                                                    var one = content.split("#error")[0];
+                                                    var two = content.split("#error")[1];
+                                                    content = one;
+                                                    content += `
+        writeLog(f1,"$${q + 1}$-f")
+        writeLog(f2,"× 第${q + 1}个测试用例-执行失败")
+                                                    `;
+                                                    content += two;
+
                                                     content = `#第${q + 1}个测试用例--------------------\n` + content + "\n#--------------------------------";
                                                     allContent.push(content);
                                                 }
@@ -487,15 +548,10 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                                                     for (var i = 0; i < allContent.length; i++) {
                                                         html += allContent[i];
                                                         html += `
-        writeLog(f1,"$${i + 1}$-f")
-        writeLog(f2,"× 第${i + 1}个测试用例-执行失败")
-
-writeLog(f1,"$${i + 1}$-s")
-writeLog(f2,"√ 第${i + 1}个测试用例-执行成功")
 
 endLog()
 f1 = open("./status-show.txt","a+")
-f2 = open("./logs/auto-test-log(" + nowDate + ").txt","w+")
+f2 = open("./logs/auto-test-log(" + nowDate + ").txt","a+")
 writeLog(f2,"")`;
                                                         html += "\n\n";
                                                     }
@@ -513,7 +569,7 @@ endLog()`;
 
                                                         var runStatus = $(".run-status");
                                                         var all = "", result = "", ii, iiLen, resultObj = {};
-                                                        running = setInterval(() => {
+                                                        runningLoop = setInterval(() => {
                                                             try {
                                                                 var data = fs.readFileSync(logPath + "/status-show.txt");
                                                                 var content = data.toString();
@@ -585,13 +641,13 @@ endLog()`;
                         case 'stopText':
                             // 停止
                             var data = checkStatus.data;
-                            clearInterval(running);
+                            clearInterval(runningLoop);
 
                             var runStatus = $(".run-status");
                             for (var i = 0; i < runStatus.length; i++) {
                                 runStatus[i].className = "run-status";
                             }
-                            
+
                             var paths = [pyPath + "/temp", logPath + "/status-show.txt"];
                             for (var i = 0; i < paths.length; i++) {
                                 (function (i) {
@@ -638,12 +694,18 @@ endLog()`;
 
         });
 
+        function isRun() {
+            return isRunning == 0 ? false : true;
+        }
+
         function showRunning(type) {
             if (type == 0) {
                 $(".runlist .mask").removeClass("active");
+                isRunning = 0;
             }
             if (type == 1) {
                 $(".runlist .mask").addClass("active");
+                isRunning = 1;
             }
         }
 

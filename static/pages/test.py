@@ -1,14 +1,19 @@
-import os
-import time
+# -*- encoding=utf8 -*-
+statusTemp = 1
+#start
+time = 0
+while time < 3:
+    try:
+        # 执行命令
+        popco()
+        break
+    except:
+        # 发生了异常，次数+1
+        time = time + 1
 
-nowDate = time.strftime('%Y-%m-%d-%H-%M-%S',time.localtime(time.time())) + "";
-f = open("./logs/auto-test-log(" + nowDate + ").txt","w+")
+        # 回到初始状态
+#end
+        print "error"
 
-def writeLog(file, content):
-    file.write(content)
-
-def endLog():
-    f.close()
-
-writeLog(f,"hello")
-endLog();
+if statusTemp == 1:
+    print "success"
