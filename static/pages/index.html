@@ -43,7 +43,11 @@
             </div>
         </div>
     </div>
+    <div class="disactive" id="gotourl">
+        <a class="gotourl" href="http://service.wewin.com.cn:8073{{d.url}}">下载</a>
+    </div>
     <div class="disactive" id="barDemo">
+        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit">修改</a>
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </div>
     <div class="disactive" id="addTest">
@@ -104,6 +108,7 @@
         var child_process = require('child_process');
         var request = require('request');
         var fs = require('fs');
+        var fse = require('fs-extra');
         var path = require('path');
         var unzip = require("unzip");
         var rimraf = require('rimraf');
@@ -121,6 +126,10 @@
         var runningLoop, isRunning = 0;
         var runHtml = `
 # -*- encoding=utf8 -*-
+import sys
+reload(sys)
+sys.setdefaultencoding('gbk')
+
 import os
 import time
 
@@ -339,12 +348,12 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                     , defaultToolbar: ['filter', 'exports']
                     , cols: [[ //标题栏
                         { type: 'checkbox' }
-                        , { field: 'url', title: '脚本', width: 80, hide: true, unresize: true }
-                        , { field: '_id', title: '编号', width: 210, sort: true, hide: true, unresize: true }
+                        , { field: '_id', title: '编号', width: 80, hide: false, unresize: true }
                         , { field: 'title', title: '用例标题', unresize: true }
                         , { field: 'content', title: '用例步骤', unresize: true, hide: true }
                         , { field: 'hope', title: '用例预期', unresize: true, hide: true }
-                        , { title: '操作', toolbar: '#barDemo', width: 80, unresize: true }
+                        , { field: 'url', title: '脚本', width: 60, hide: false, unresize: true, templet: '#gotourl' }
+                        , { title: '操作', toolbar: '#barDemo', width: 120, unresize: true }
                     ]]
                     , limit: 20
                     , data: allData
@@ -559,6 +568,16 @@ writeLog(f2,"")`;
 writeLog(f1,"#end")
 writeLog(f2,"#end")
 endLog()`;
+                                                    //复制所有图片到run目录下
+                                                    for (var i = 0; i < zipNum; i++) {
+                                                        var readDir = fs.readdirSync(savePath + `/${i + 1}`);
+                                                        for (var j = 0; j < readDir.length; j++) {
+                                                            if (readDir[j].split(".")[1] != "py") {
+                                                                fse.copySync(savePath + `/${i + 1}/` + readDir[j], savePath + "/run/" + readDir[j]);
+                                                            }
+                                                        }
+                                                    }
+
                                                     fs.writeFile(savePath + "/run/run.py", html, function (err) {
                                                         if (err) {
                                                             return console.error('创建文件出错！', err);
@@ -574,6 +593,7 @@ endLog()`;
                                                                 var data = fs.readFileSync(logPath + "/status-show.txt");
                                                                 var content = data.toString();
                                                                 for (var i = 0; i < runStatus.length; i++) {
+                                                                    x
                                                                     ii = i + 1;
                                                                     iiLen = ii.toString().length;
                                                                     if (iiLen == 1) {
@@ -602,7 +622,7 @@ endLog()`;
                                                 });
                                             }, 1500);
                                         }
-                                    }, 5);
+                                    }, 10);
                                     setTimeout(() => {
                                         for (var i = 0; i < readZipDir.length; i++) {
                                             (function (i) {
