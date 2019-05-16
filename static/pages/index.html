@@ -51,7 +51,7 @@
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </div>
     <div class="disactive" id="addTest">
-        <form class="layui-form layui-form-pane" action="" lay-filter="example">
+        <form class="layui-form layui-form-pane" action="" lay-filter="addForm">
             <div class="layui-form-item">
                 <label class="layui-form-label">用例标题</label>
                 <div class="layui-input-block">
@@ -73,7 +73,7 @@
                 </div>
             </div>
             <div class="layui-form-item">
-                <button class="layui-btn layui-btn-normal upload-case" lay-submit="" lay-filter="demo1">提交用例</button>
+                <button class="layui-btn layui-btn-normal upload-case" lay-submit="" lay-filter="sureAdd">提交用例</button>
                 <button type="reset" class="layui-btn layui-btn-primary"
                     style="margin-left:0px;width:100%;margin-top:15px;">重置表单</button>
             </div>
@@ -90,13 +90,75 @@
                 文件名：<span class="filename">无</span>
             </div>
             <!-- <div class="layui-field-box">
-                文件路径：<span class="filepath">无</span>
-            </div> -->
+                        文件路径：<span class="filepath">无</span>
+                    </div> -->
             <div class="layui-field-box">
                 文件大小：<span class="filesize">无</span>
             </div>
         </fieldset>
         <button class="layui-btn layui-btn-normal" id="uploadFile">上传文件</button>
+    </div>
+    <div class="disactive" id="editTest">
+        <div class="layui-tab">
+            <ul class="layui-tab-title">
+                <li class="layui-this">修改内容</li>
+                <li>修改脚本</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+                    <form class="layui-form layui-form-pane" action="" lay-filter="editForm">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">用例标题</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="title" lay-verify="title" autocomplete="off"
+                                    placeholder="请输入用例标题" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item layui-form-text">
+                            <label class="layui-form-label">用例步骤</label>
+                            <div class="layui-input-block">
+                                <textarea placeholder="请输入用例步骤" class="layui-textarea" name="content"
+                                    lay-verify="content"></textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item layui-form-text">
+                            <label class="layui-form-label">用例预期</label>
+                            <div class="layui-input-block">
+                                <textarea placeholder="请输入用例预期" class="layui-textarea" name="hope"
+                                    lay-verify="hope"></textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <button class="layui-btn layui-btn-normal upload-case" lay-submit=""
+                                lay-filter="sureEdit">确认修改</button>
+                            <!-- <button type="reset" class="layui-btn layui-btn-primary" style="margin-left:0px;width:100%;margin-top:15px;">重置表单</button> -->
+                        </div>
+                    </form>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="" id="editTest2">
+                        <div class="layui-upload-drag" id="zipfile2">
+                            <i class="layui-icon"></i>
+                            <p>点击上传，或将文件拖拽到此处</p>
+                        </div>
+                        <fieldset class="layui-elem-field" style="margin-top:15px;">
+                            <legend>用例文件信息</legend>
+                            <div class="layui-field-box">
+                                文件名：<span class="filename">无</span>
+                            </div>
+                            <!-- <div class="layui-field-box">
+                                                文件路径：<span class="filepath">无</span>
+                                            </div> -->
+                            <div class="layui-field-box">
+                                文件大小：<span class="filesize">无</span>
+                            </div>
+                        </fieldset>
+                        <button class="layui-btn layui-btn-normal" id="uploadFile2">上传文件</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     <script src="../layui/layui.js"></script>
     <script src="../js/Sortable.min.js"></script>
@@ -116,7 +178,7 @@
         var pyPath = path.dirname(remote.app.getPath('exe'));
         var logPath = path.resolve(__dirname, '../..');
         //online
-        // logPath = pyPath;
+        logPath = pyPath;
 
         try {
             fs.mkdirSync(logPath + "/logs");
@@ -174,7 +236,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
         }
 
         //初始化layui
-        layui.use(['layer', 'table', 'laytpl', 'form', 'upload'], function () {
+        layui.use(['layer', 'table', 'laytpl', 'form', 'upload', 'element'], function () {
             var form = layui.form;
             var table = layui.table;
             var laytpl = layui.laytpl;
@@ -203,6 +265,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
             initUpload();
             function initUpload() {
                 var flag = true;
+                //新增脚本
                 upload.render({ //允许上传的文件后缀
                     elem: '#zipfile'
                     , url: URL + '/uploads'
@@ -248,7 +311,56 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                         layer.msg('上传失败');
                     }
                 });
+
+                //修改脚本
+                upload.render({ //允许上传的文件后缀
+                    elem: '#zipfile2'
+                    , url: URL + '/uploads'
+                    , data: {
+                        id: function () {
+                            return uploadId + "";
+                        }
+                    }
+                    , auto: false
+                    , bindAction: '#uploadFile2'
+                    , size: 5120
+                    , accept: 'file' //普通文件
+                    , exts: 'zip' //只允许上传压缩文件
+                    , choose: function (obj) {
+                        //预读本地文件，如果是多文件，则会遍历。(不支持ie8/9)
+                        obj.preview(function (index, file, result) {
+                            console.log(file);
+                            $(".filename").text(file.name);
+                            // $(".filepath").text(file.path);
+                            $(".filesize").text((~~(file.size / 1024) + 1) + "KB");
+                            flag = true;
+                        });
+                    }
+                    , before: function (obj) {
+                        if (!flag) {
+                            layer.msg('请先选择文件');
+                        }
+                        return flag;
+                        layer.load();
+                    }
+                    , done: function (res, index, upload) {
+                        flag = false;
+                        $(".filename").text("无");
+                        // $(".filepath").text("无");
+                        $(".filesize").text("无");
+                        $(".layui-upload-file").val('');
+                        layer.closeAll();
+                        layer.msg('上传成功');
+                        reloadTableData();
+                    }
+                    , error: function (index, upload) {
+                        layer.closeAll();
+                        layer.msg('上传失败');
+                    }
+                });
+
             }
+
 
             //初始化新增用例表单
             initForm();
@@ -270,7 +382,9 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                         }
                     }
                 });
-                form.on('submit(demo1)', function (data) {
+
+                //新增用例内容
+                form.on('submit(sureAdd)', function (data) {
                     // layer.alert(JSON.stringify(data.field), {
                     //     title: '最终的提交信息'
                     // })
@@ -311,18 +425,41 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                     })
                     return false;
                 });
-                form.val('example', {
-                    "title": "文本换行输入"
-                    , "content": `1. 从首页点击“编辑我的标签+“
-2. 点击“文字+”插入新文本
-3. 多行输入,手动换行，自适应字号的指数达至400mm
-4. 改变字号，打印
-5. 改变字体，打印
-6. 改变字体修饰，打印`
-                    , "hope": `1. 进入自由编辑页面
-2. 文本插入成功
-3. 输入自适应字号变小，直至最小字号，以最长行为标准变换字号`
-                })
+
+                //修改用例内容
+                form.on('submit(sureEdit)', function (data) {
+                    $.ajax({
+                        type: 'post',
+                        url: URL + "/edit",
+                        data: {
+                            id: uploadId,
+                            title: data.field.title,
+                            content: data.field.content,
+                            hope: data.field.hope
+                        },
+                        success(result) {
+                            console.log("修改用例:", result);
+                            uploadId = result.list._id;
+                            if (result.result == "success") {
+                                layer.msg('修改内容成功');
+                                reloadTableData();
+                            }
+                        }
+                    })
+                    return false;
+                });
+                //                 form.val('addForm', {
+                //                     "title": "文本换行输入"
+                //                     , "content": `1. 从首页点击“编辑我的标签+“
+                // 2. 点击“文字+”插入新文本
+                // 3. 多行输入,手动换行，自适应字号的指数达至400mm
+                // 4. 改变字号，打印
+                // 5. 改变字体，打印
+                // 6. 改变字体修饰，打印`
+                //                     , "hope": `1. 进入自由编辑页面
+                // 2. 文本插入成功
+                // 3. 输入自适应字号变小，直至最小字号，以最长行为标准变换字号`
+                //                 })
             }
 
             //初始化表格
@@ -375,7 +512,7 @@ poco = AndroidUiautomationPoco(use_airtest_input=True, screenshot_each_action=Fa
                             uploadLayer = layer.open({
                                 type: 1,
                                 title: '新增用例',
-                                area: ['55%'],
+                                area: ['55%', '70%'],
                                 content: $("#addTest")
                             });
                             break;
@@ -689,25 +826,47 @@ endLog()`;
                 table.on('tool(test)', function (obj) {
                     var data = obj.data;
                     var _id = data._id;
-                    if (obj.event === 'del') {
-                        layer.confirm('确定删除？', function (index) {
-                            $.ajax({
-                                type: 'get',
-                                url: URL + '/delete',
-                                data: {
-                                    id: _id
-                                },
-                                success(result) {
-                                    if (result.msg == "delete success!") {
-                                        layer.msg('删除成功');
-                                        obj.del();
-                                    } else {
-                                        layer.msg('删除失败');
+                    switch (obj.event) {
+                        case 'del':
+                            layer.confirm('确定删除？', function (index) {
+                                $.ajax({
+                                    type: 'get',
+                                    url: URL + '/delete',
+                                    data: {
+                                        id: _id
+                                    },
+                                    success(result) {
+                                        if (result.msg == "delete success!") {
+                                            layer.msg('删除成功');
+                                            obj.del();
+                                        } else {
+                                            layer.msg('删除失败');
+                                        }
+                                        layer.close(index);
                                     }
-                                    layer.close(index);
-                                }
+                                })
+                            });
+                            break;
+                        case 'edit':
+                            uploadId = data._id;
+                            form.val('editForm', {
+                                "title": ""
+                                , "content": ""
+                                , "hope": ""
                             })
-                        });
+                            layer.open({
+                                type: 1,
+                                title: '修改用例',
+                                area: ['55%', '80%'],
+                                content: $("#editTest")
+                            });
+                            var reg = new RegExp('<br/>', "g");
+                            form.val('editForm', {
+                                "title": `${data.title}`
+                                , "content": `${data.content.replace(reg, "\n")}`
+                                , "hope": `${data.hope.replace(reg, "\n")}`
+                            })
+                            break;
                     }
                 });
             }

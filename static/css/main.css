@@ -38,6 +38,7 @@ html {
     float: right;
     width: calc(100% - 260px);
     border-left: 5px solid #ddd;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
 }
 
@@ -69,6 +70,7 @@ html {
     position: absolute;
     top: 50%;
     left: 50%;
+    -webkit-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
     font-size: 20px;
     color: #9c9c9c;
@@ -107,6 +109,7 @@ html {
     font-size: 17px;
     position: absolute;
     top: 50%;
+    -webkit-transform: translate(0, -50%);
     transform: translate(0, -50%);
     right: 7px;
 }
@@ -121,13 +124,9 @@ html {
     white-space: normal;
 }
 
-#addTest,
-#addTest2 {
-    padding: 20px;
-}
-
 .layui-upload-drag {
     width: 100%;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     margin-top: -1px;
 }
@@ -162,7 +161,8 @@ html {
     color: #777;
 }
 
-#uploadFile {
+#uploadFile,
+#uploadFile2 {
     width: 100%;
     margin-top: 15px;
 }
@@ -182,17 +182,20 @@ html {
     position: absolute;
     right: 28px;
     top: 50%;
+    -webkit-transform: translate(0, -50%);
     transform: translate(0, -50%);
     border-radius: 50%;
 }
 
 .run-status.success {
     background: #77f368;
+    -webkit-box-shadow: 0px 0px 10px rgba(119, 243, 104, 0.6);
     box-shadow: 0px 0px 10px rgba(119, 243, 104, 0.6);
 }
 
 .run-status.fail {
     background: #ff5b5b;
+    -webkit-box-shadow: 0px 0px 10px rgba(255, 91, 91, 0.6);
     box-shadow: 0px 0px 10px rgba(255, 91, 91, 0.6);
 }
 
@@ -203,4 +206,20 @@ html {
 .gotourl:hover {
     text-decoration: underline;
     color: #2e93ff;
+}
+
+.layui-layer-content {
+    padding: 20px;
+}
+
+.layui-layer-title {
+    background-color: #ddd !important;
+}
+
+#editTest {
+    margin-top: -10px;
+}
+
+.layui-tab-content {
+    padding-top: 20px;
 }
