@@ -730,7 +730,6 @@ endLog()`;
                                                                 var data = fs.readFileSync(logPath + "/status-show.txt");
                                                                 var content = data.toString();
                                                                 for (var i = 0; i < runStatus.length; i++) {
-                                                                    x
                                                                     ii = i + 1;
                                                                     iiLen = ii.toString().length;
                                                                     if (iiLen == 1) {
@@ -750,7 +749,9 @@ endLog()`;
                                                                         runStatus[i].className = "run-status";
                                                                     }
                                                                 }
-                                                            } catch (error) { }
+                                                            } catch (error) {
+                                                                console.log(error);
+                                                            }
                                                         }, 300);
                                                         setTimeout(() => {
                                                             child_process.exec(`start cmd.exe /K python \"${savePath}/run/run.py\"`);
